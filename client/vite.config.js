@@ -3,6 +3,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [tailwindcss()],
+  build: {
+    outDir: '../server/public',
+    emptyOutDir: true,
+  },
   server: {
     port: 3000,
     proxy: {
