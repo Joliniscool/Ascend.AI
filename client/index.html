@@ -301,6 +301,78 @@
     @keyframes popIn { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
     @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     @keyframes wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+
+    .log-section, .meals-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 2rem 2.5rem;
+      margin-top: 1.5rem;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .log-form {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 170px;
+      transition: border-color 0.2s, background 0.2s;
+      overflow: hidden;
+      position: relative;
+    }
+    .drop-zone:hover { border-color: var(--accent2); background: rgba(255,77,143,0.05); }
+    #drop-zone-content { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; text-align: center; }
+    .drop-icon { font-size: 2rem; }
+    .drop-label { font-weight: 600; font-size: 0.9rem; }
+    .drop-hint { font-size: 0.72rem; color: var(--muted); }
+    #image-preview { width: 100%; border-radius: 12px; max-height: 200px; object-fit: cover; display: none; }
+
+    .log-fields { display: flex; flex-direction: column; gap: 1rem; }
+    .macros-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+
+    .meals-grid { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
+
+    .meal-card {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      transition: border-color 0.2s;
+    }
+    .meal-card:hover { border-color: rgba(255,124,74,0.3); }
+
+    .meal-img { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; flex-shrink: 0; }
+    .meal-img-placeholder {
+      width: 64px; height: 64px; border-radius: 12px;
+      background: var(--surface); display: flex; align-items: center;
+      justify-content: center; font-size: 1.5rem; flex-shrink: 0;
+    }
+    .meal-info { flex: 1; }
+    .meal-name-text { font-family: 'Nunito', sans-serif; font-weight: 700; margin-bottom: 0.3rem; }
+    .meal-macros { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.25rem; }
+    .macro { font-size: 0.72rem; padding: 0.2rem 0.65rem; border-radius: 100px; background: var(--surface); }
+    .meal-date { font-size: 0.7rem; color: var(--muted); }
+    .meals-empty { color: var(--muted); text-align: center; padding: 2rem; font-size: 0.9rem; }
+
+    @media (max-width: 700px) {
+      .log-form { grid-template-columns: 1fr; }
+      .macros-row { grid-template-columns: repeat(2, 1fr); }
+    }
   </style>
 </head>
 <body>
@@ -483,6 +555,56 @@
         </div>
         <button class="save-btn" onclick="saveProfile()">Save Profile 💾</button>
       </div>
+
+      <!-- LOG FOOD -->
+      <div class="log-section">
+        <div class="section-title">📷 Log a Meal</div>
+        <div class="log-form">
+          <div class="drop-zone" id="drop-zone" onclick="document.getElementById('food-image').click()">
+            <input type="file" id="food-image" accept="image/*" style="display:none" onchange="previewImage(this)">
+            <div id="drop-zone-content">
+              <div class="drop-icon">📷</div>
+              <div class="drop-label">Click to upload a photo</div>
+              <div class="drop-hint">Optional · JPG, PNG up to 5MB</div>
+            </div>
+            <img id="image-preview" alt="food preview">
+          </div>
+          <div class="log-fields">
+            <div class="field">
+              <label>Meal Name</label>
+              <input type="text" id="meal-name" placeholder="e.g. Chicken Bowl">
+            </div>
+            <div class="macros-row">
+              <div class="field">
+                <label>Calories</label>
+                <input type="number" id="meal-calories" placeholder="kcal" min="0">
+              </div>
+              <div class="field">
+                <label>Protein (g)</label>
+                <input type="number" id="meal-protein" placeholder="g" min="0">
+              </div>
+              <div class="field">
+                <label>Carbs (g)</label>
+                <input type="number" id="meal-carbs" placeholder="g" min="0">
+              </div>
+              <div class="field">
+                <label>Fat (g)</label>
+                <input type="number" id="meal-fat" placeholder="g" min="0">
+              </div>
+            </div>
+            <button class="save-btn" id="log-btn" onclick="logMeal()">Log Meal 🍽️</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT MEALS -->
+      <div class="meals-section">
+        <div class="section-title">🍽️ Recent Meals</div>
+        <div class="meals-grid" id="meals-grid">
+          <div class="meals-empty">No meals logged yet — add your first one above! 🌸</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -495,7 +617,7 @@
       try {
         const res = await fetch(`${API}/auth/me`, { credentials: 'include' });
         const data = await res.json();
-        if (data.user) { showDashboard(data.user); loadStats(); loadProfile(); }
+        if (data.user) { showDashboard(data.user); loadStats(); loadProfile(); loadMeals(); }
         else showLogin();
       } catch { showLogin(); }
     }
@@ -575,6 +697,85 @@
       const t = document.getElementById('toast');
       t.textContent = msg; t.classList.add('show');
       setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    function previewImage(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = document.getElementById('image-preview');
+        const content = document.getElementById('drop-zone-content');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        content.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function logMeal() {
+      const name = document.getElementById('meal-name').value.trim();
+      if (!name) { showToast('Please enter a meal name ❌'); return; }
+
+      const btn = document.getElementById('log-btn');
+      btn.disabled = true; btn.textContent = 'Logging...';
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('calories', document.getElementById('meal-calories').value || 0);
+      formData.append('protein', document.getElementById('meal-protein').value || 0);
+      formData.append('carbs', document.getElementById('meal-carbs').value || 0);
+      formData.append('fat', document.getElementById('meal-fat').value || 0);
+
+      const imageFile = document.getElementById('food-image').files[0];
+      if (imageFile) formData.append('image', imageFile);
+
+      try {
+        const res = await fetch(`${API}/api/meals`, { method: 'POST', credentials: 'include', body: formData });
+        if (!res.ok) throw new Error();
+        showToast('Meal logged! 🍽️');
+        document.getElementById('meal-name').value = '';
+        document.getElementById('meal-calories').value = '';
+        document.getElementById('meal-protein').value = '';
+        document.getElementById('meal-carbs').value = '';
+        document.getElementById('meal-fat').value = '';
+        document.getElementById('food-image').value = '';
+        document.getElementById('image-preview').style.display = 'none';
+        document.getElementById('drop-zone-content').style.display = 'flex';
+        loadMeals();
+        loadStats();
+      } catch { showToast('Failed to log meal ❌'); }
+
+      btn.disabled = false; btn.textContent = 'Log Meal 🍽️';
+    }
+
+    async function loadMeals() {
+      try {
+        const res = await fetch(`${API}/api/meals/my`, { credentials: 'include' });
+        const meals = await res.json();
+        const grid = document.getElementById('meals-grid');
+        if (!meals.length) {
+          grid.innerHTML = '<div class="meals-empty">No meals logged yet — add your first one above! 🌸</div>';
+          return;
+        }
+        grid.innerHTML = meals.map(meal => `
+          <div class="meal-card">
+            ${meal.imageUrl
+              ? `<img class="meal-img" src="${meal.imageUrl}" alt="${meal.name}">`
+              : `<div class="meal-img-placeholder">🍽️</div>`}
+            <div class="meal-info">
+              <div class="meal-name-text">${meal.name}</div>
+              <div class="meal-macros">
+                ${meal.calories ? `<span class="macro">🔥 ${meal.calories} kcal</span>` : ''}
+                ${meal.protein ? `<span class="macro">💪 ${meal.protein}g protein</span>` : ''}
+                ${meal.carbs ? `<span class="macro">🌾 ${meal.carbs}g carbs</span>` : ''}
+                ${meal.fat ? `<span class="macro">🧈 ${meal.fat}g fat</span>` : ''}
+              </div>
+              <div class="meal-date">${new Date(meal.loggedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+            </div>
+          </div>
+        `).join('');
+      } catch {}
     }
 
     init();
