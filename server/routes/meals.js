@@ -39,6 +39,21 @@ async function searchFoodCandidates(query, limit = 5) {
     .lean();
 }
 
+function titleCase(s) {
+  if (!s) return '';
+  return s.split(/\s+/)
+    .map(w => w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : '')
+    .join(' ');
+}
+
+function suggestMealName(detectedItems) {
+  const names = detectedItems.map(d => titleCase(d.food || '')).filter(Boolean);
+  if (names.length === 0) return 'Meal';
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} & ${names[1]}`;
+  return `${names[0]}, ${names[1]} & More`;
+}
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key:    process.env.CLOUDINARY_API_KEY,
@@ -100,7 +115,7 @@ router.post('/analyze', isAuthenticated, upload.single('image'), async (req, res
       candidates: await searchFoodCandidates(it.food, 5),
     })));
 
-    res.json({ imageUrl, items });
+    res.json({ imageUrl, suggestedName: suggestMealName(detected), items });
   } catch (err) {
     console.error('Meal analyze error:', err);
     res.status(500).json({ error: err.message });
