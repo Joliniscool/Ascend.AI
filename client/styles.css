@@ -1650,3 +1650,41 @@ body {
   color: #fda4af;
   border-color: rgba(253, 164, 175, 0.35);
 }
+
+/* ── Stat-card corner sub-stats ──────────────────────────────────────────────
+   Each card surfaces a secondary metric in the top-right and bottom-right
+   corners (e.g. "🔥 Cal Streak" alongside the main streak). Absolute-
+   positioned so the existing icon/label/value/unit stack stays untouched.
+*/
+.stat-corner {
+  position: absolute;
+  text-align: right;
+  line-height: 1.2;
+  z-index: 1;
+}
+.stat-corner-tr { top: 0.85rem;    right: 1rem; }
+.stat-corner-br { bottom: 0.85rem; right: 1rem; }
+.stat-corner-label {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.stat-corner-value {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-top: 0.05rem;
+}
+
+/* ── Meal-details popup — full red highlight for bad micros at high range ──
+   Limit nutrients (sodium, sugar, cholesterol, sat fat) at ≥30% DV per meal
+   get a red-tinted card mirroring how good micros get a green-tinted card.
+*/
+.meal-detail-micro.bad {
+  background: rgba(253, 164, 175, 0.1);
+  border-color: rgba(253, 164, 175, 0.4);
+}
+.meal-detail-micro.bad .pct { color: #fda4af; }

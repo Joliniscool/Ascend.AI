@@ -61,9 +61,20 @@ function openMealDetails(meal) {
       if (!amount) return '';
       const pct = dvPct(m.key, amount);
       const isLimit = DV[m.key]?.limit;
+      // Three render states per micro card:
+      //   good micro ≥30% DV   → .high (green tint, full background)
+      //   limit micro ≥30% DV  → .bad  (red tint, full background)  ← NEW
+      //   limit micro <30% DV  → .limit (just red %DV color, no tint)
       const isHigh = !isLimit && pct >= 30;
+      const isBad  =  isLimit && pct >= 30;
+      const cls = [
+        'meal-detail-micro',
+        isHigh ? 'high' : '',
+        isBad  ? 'bad'  : '',
+        isLimit && !isBad ? 'limit' : '',
+      ].filter(Boolean).join(' ');
       return `
-        <div class="meal-detail-micro ${isHigh ? 'high' : ''} ${isLimit ? 'limit' : ''}">
+        <div class="${cls}">
           <div class="meal-detail-micro-row1">
             <span>${m.icon} ${m.label}</span>
             <span class="pct">${pct}% DV</span>

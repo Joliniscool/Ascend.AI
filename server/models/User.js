@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
   sex:       { type: String, enum: ['male', 'female', 'other'] },
   height:    { type: Number },
   weightLog: [{ value: { type: Number }, date: { type: Date, default: Date.now } }],
+  // Target weight set in profile (kg). Independent of `goal` (lose/maintain/gain)
+  // — that field controls the calorie-target heuristic; this is the actual
+  // number the user is working toward.
+  goalWeight: { type: Number },
   activityLevel: { type: String, enum: ['sedentary', 'light', 'moderate', 'active', 'very_active'] },
   goal:      { type: String, enum: ['lose', 'maintain', 'gain'] },
   dailyCalorieGoal:  { type: Number },

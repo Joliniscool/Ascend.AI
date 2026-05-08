@@ -14,7 +14,7 @@ router.get('/profile', isAuthenticated, async (req, res) => {
 
 router.put('/profile', isAuthenticated, async (req, res) => {
   try {
-    const { age, sex, height, activityLevel, goal, weight } = req.body;
+    const { age, sex, height, activityLevel, goal, weight, goalWeight } = req.body;
 
     const user = await User.findById(req.user._id);
 
@@ -73,6 +73,7 @@ router.put('/profile', isAuthenticated, async (req, res) => {
     user.height        = height        || user.height;
     user.activityLevel = activityLevel || user.activityLevel;
     user.goal          = goal          || user.goal;
+    if (goalWeight != null && goalWeight !== '') user.goalWeight = Number(goalWeight);
 
     await user.save();
     res.json(user);
@@ -164,6 +165,32 @@ function buildTargetBreakdown(user) {
   };
 }
 
+// Streak threshold — hitting ≥85% of goal counts as a "good" day.
+// Punishing exact-100% breaks user motivation; 85% is the standard nudge target.
+const STREAK_TOLERANCE = 0.85;
+const TARGET_MEALS_PER_DAY = 3;
+
+// Walk backwards from today and count consecutive days where dailyTotals[i]
+// hit `goal * STREAK_TOLERANCE`. Today is allowed to be incomplete (i.e.
+// we don't break the streak just because today hasn't hit its target yet).
+function countStreak(dailyTotals, goal) {
+  if (!goal || goal <= 0) return 0;
+  const threshold = goal * STREAK_TOLERANCE;
+  let streak = 0;
+  for (let i = 0; i < dailyTotals.length; i++) {
+    const hit = dailyTotals[i] >= threshold;
+    if (hit) {
+      streak++;
+    } else if (i === 0) {
+      // Today is grace-period: don't increment, but don't break either.
+      continue;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
 router.get('/stats', isAuthenticated, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -177,8 +204,42 @@ router.get('/stats', isAuthenticated, async (req, res) => {
     const todaysMicros = {};
     for (const k of MICRO_KEYS) todaysMicros[k] = round1(sumKey(k));
 
+    // Pull last 60 days of meals to compute calorie + protein streaks.
+    // Bucket by local-date string, sum each macro per day.
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 86400000);
+    const recentMeals = await Meal
+      .find({ user: req.user._id, loggedAt: { $gte: sixtyDaysAgo } })
+      .select('loggedAt calories protein')
+      .lean();
+    const byDate = new Map();
+    for (const m of recentMeals) {
+      const key = new Date(m.loggedAt).toDateString();
+      const e = byDate.get(key) || { cal: 0, prot: 0 };
+      e.cal  += m.calories || 0;
+      e.prot += m.protein  || 0;
+      byDate.set(key, e);
+    }
+    // Build dailyTotals[0] = today, [1] = yesterday, ...
+    const calDailies  = [];
+    const protDailies = [];
+    for (let i = 0; i < 60; i++) {
+      const d = new Date(Date.now() - i * 86400000).toDateString();
+      const e = byDate.get(d) || { cal: 0, prot: 0 };
+      calDailies.push(e.cal);
+      protDailies.push(e.prot);
+    }
+    const calorieStreak = countStreak(calDailies,  user.dailyCalorieGoal);
+    const proteinStreak = countStreak(protDailies, user.dailyProteinGoal);
+
+    const startingWeight = user.weightLog?.[0]?.value;
+    const currentWeight  = user.weightLog?.at(-1)?.value;
+    const mealsToday     = todaysMeals.length;
+    const missedToday    = Math.max(0, TARGET_MEALS_PER_DAY - mealsToday);
+
     res.json({
-      currentWeight:    user.weightLog.at(-1)?.value,
+      currentWeight,
+      startingWeight,
+      goalWeight:       user.goalWeight,
       dailyCalorieGoal: user.dailyCalorieGoal,
       dailyProteinGoal: user.dailyProteinGoal,
       dailyFatGoal:     user.dailyFatGoal,
@@ -193,7 +254,11 @@ router.get('/stats', isAuthenticated, async (req, res) => {
       todaysMicros,
       currentStreak:  user.currentStreak,
       longestStreak:  user.longestStreak,
+      calorieStreak,
+      proteinStreak,
       totalMeals,
+      mealsToday,
+      missedToday,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

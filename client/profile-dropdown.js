@@ -15,11 +15,12 @@
       const res  = await fetch(`${api()}/api/users/profile`, { credentials: 'include' });
       const user = await res.json();
       const set  = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
-      set('field-age',      user.age);
-      set('field-sex',      user.sex);
-      set('field-height',   user.height);
-      set('field-activity', user.activityLevel);
-      set('field-goal',     user.goal);
+      set('field-age',         user.age);
+      set('field-sex',         user.sex);
+      set('field-height',      user.height);
+      set('field-activity',    user.activityLevel);
+      set('field-goal',        user.goal);
+      set('field-goal-weight', user.goalWeight);
       if (user.weightLog?.length) set('field-weight', user.weightLog.at(-1).value);
     } catch {}
   };
@@ -40,7 +41,8 @@
           height:        Number(get('field-height')) || undefined,
           activityLevel: get('field-activity')       || undefined,
           goal:          get('field-goal')           || undefined,
-          weight:        get('field-weight') ? Number(get('field-weight')) : undefined,
+          weight:        get('field-weight')      ? Number(get('field-weight'))      : undefined,
+          goalWeight:    get('field-goal-weight') ? Number(get('field-goal-weight')) : undefined,
         }),
       });
       if (typeof showToast === 'function') showToast('Profile saved! 🌸');

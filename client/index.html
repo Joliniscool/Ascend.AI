@@ -111,6 +111,10 @@
               <label>Weight (kg)</label>
               <input type="number" id="field-weight" placeholder="e.g. 70" step="0.1" />
             </div>
+            <div class="field">
+              <label>Goal Weight (kg)</label>
+              <input type="number" id="field-goal-weight" placeholder="e.g. 65" step="0.1" />
+            </div>
             <div class="field" style="grid-column:span 2">
               <label>Activity Level</label>
               <select id="field-activity">
@@ -189,25 +193,55 @@
         <div class="micros-grid" id="micros-grid" style="display:none"></div>
       </div>
 
-      <!-- Quick Stats -->
+      <!-- Quick Stats — each card has corner sub-stats (top-right + bottom-right)
+           that surface secondary metrics without needing a separate card. -->
       <div class="stats-grid">
+        <!-- Streak: main = log-anything streak, TR = calorie-goal streak, BR = protein-goal streak -->
         <div class="stat-card">
+          <div class="stat-corner stat-corner-tr">
+            <div class="stat-corner-label">🔥 Cal Streak</div>
+            <div class="stat-corner-value" id="stat-cal-streak">—</div>
+          </div>
           <div class="stat-icon">⚡</div>
           <div class="stat-label">Current Streak</div>
           <div class="stat-value" id="stat-streak">—</div>
           <div class="stat-unit">days in a row!</div>
+          <div class="stat-corner stat-corner-br">
+            <div class="stat-corner-label">💪 Protein Streak</div>
+            <div class="stat-corner-value" id="stat-prot-streak">—</div>
+          </div>
         </div>
+
+        <!-- Meals: main = today, TR = total all-time, BR = how many you still need to log today -->
         <div class="stat-card">
+          <div class="stat-corner stat-corner-tr">
+            <div class="stat-corner-label">All-time</div>
+            <div class="stat-corner-value" id="stat-meals-total">—</div>
+          </div>
           <div class="stat-icon">🍽️</div>
-          <div class="stat-label">Meals Logged</div>
-          <div class="stat-value" id="stat-meals">—</div>
-          <div class="stat-unit">total meals</div>
+          <div class="stat-label">Meals Today</div>
+          <div class="stat-value" id="stat-meals-today">—</div>
+          <div class="stat-unit">of 3 logged</div>
+          <div class="stat-corner stat-corner-br">
+            <div class="stat-corner-label">Missed Today</div>
+            <div class="stat-corner-value" id="stat-meals-missed">—</div>
+          </div>
         </div>
+
+        <!-- Weight: main = current, TR = goal, BR = starting -->
         <div class="stat-card">
+          <div class="stat-corner stat-corner-tr">
+            <div class="stat-corner-label">🎯 Goal</div>
+            <div class="stat-corner-value" id="stat-weight-goal">—</div>
+          </div>
           <div class="stat-icon">⚖️</div>
           <div class="stat-label">Current Weight</div>
           <div class="stat-value" id="stat-weight">—</div>
           <div class="stat-unit">kg</div>
+          <div class="stat-corner stat-corner-br">
+            <div class="stat-corner-label">Starting</div>
+            <div class="stat-corner-value" id="stat-weight-start">—</div>
+          </div>
         </div>
       </div>
 

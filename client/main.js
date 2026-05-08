@@ -60,9 +60,24 @@ async function loadStats() {
     const res = await fetch(`${API}/api/users/stats`, { credentials: 'include' });
     const data = await res.json();
     renderNutritionPanel(data);
-    document.getElementById('stat-streak').textContent = data.currentStreak ?? '0';
-    document.getElementById('stat-meals').textContent = data.totalMeals ?? '0';
-    document.getElementById('stat-weight').textContent = data.currentWeight ?? '—';
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const fmt = (n, unit = '') => (n == null || n === '') ? '—' : `${n}${unit}`;
+
+    // Streak card: main + cal/protein corner streaks (number of consecutive days
+    // hitting ≥85% of each respective goal — server-computed in /stats).
+    set('stat-streak',      data.currentStreak ?? 0);
+    set('stat-cal-streak',  data.calorieStreak != null ? `${data.calorieStreak}d` : '—');
+    set('stat-prot-streak', data.proteinStreak != null ? `${data.proteinStreak}d` : '—');
+
+    // Meals card: today's count is the headline; total + missed-today live in corners.
+    set('stat-meals-today',  data.mealsToday ?? 0);
+    set('stat-meals-total',  data.totalMeals ?? 0);
+    set('stat-meals-missed', data.missedToday ?? 0);
+
+    // Weight card: latest from log + goal target + first weight ever logged.
+    set('stat-weight',       fmt(data.currentWeight));
+    set('stat-weight-goal',  fmt(data.goalWeight, 'kg'));
+    set('stat-weight-start', fmt(data.startingWeight, 'kg'));
   } catch {}
 }
 
