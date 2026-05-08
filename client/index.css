@@ -1,1 +1,54 @@
-@import "tailwindcss";
+/*
+ * inline.css
+ * Styles extracted from inline `style` attributes in index.html.
+ * These complement the existing styles.css.
+ */
+
+/* Welcome banner — mascot column */
+.welcome-mascot-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Platypus speech bubble */
+.platypus-bubble {
+  background: rgba(255, 77, 143, 0.15);
+  border: 1px solid rgba(255, 77, 143, 0.3);
+  border-radius: 16px 16px 4px 16px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  max-width: 200px;
+  text-align: center;
+  color: #f5eeee;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Recent Meals card header row */
+.recent-meals-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+/* Override section-title margin when inside the header row */
+.recent-meals-header .section-title {
+  margin-bottom: 0;
+}
+
+/* "View all" link in Recent Meals header */
+.recent-meals-link {
+  font-size: 0.8rem;
+}
+
+/* Hidden file inputs (kept inline as they are behaviour-critical,
+   but mirrored here for completeness) */
+#food-image,
+#camera-input {
+  display: none;
+}
