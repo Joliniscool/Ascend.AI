@@ -1,13 +1,24 @@
 const router = require('express').Router();
 const multer = require('multer');
-const path = require('path');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const isAuthenticated = require('../middleware/isAuthenticated');
 const Meal = require('../models/Meal');
 const User = require('../models/User');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename:    (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'ascend-ai/meals',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'heic'],
+    transformation: [{ width: 800, crop: 'limit', quality: 'auto' }],
+  },
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -16,7 +27,7 @@ router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
         const { name, calories, protein, carbs, fat, isPublic } = req.body;
     const meal = await Meal.create({
       user: req.user._id, name,
-      imageUrl: req.file ? `/uploads/${req.file.filename}` : null,
+      imageUrl: req.file ? req.file.path : null,
       calories: Number(calories), protein: Number(protein),
       carbs: Number(carbs), fat: Number(fat),
       isPublic: isPublic !== 'false', userEdited: true
