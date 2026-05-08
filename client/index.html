@@ -272,18 +272,21 @@
   </div>
 
   <!-- Chat -->
-  <button class="chat-bubble" onclick="toggleChat()" title="Chat with Platypus">🦆</button>
+  <div class="chud-notif" id="chud-notif" onclick="openChatFromNotif()"></div>
+  <button class="chat-bubble" onclick="toggleChat()" title="Chud Assist">
+    <img src="./chad transparent.png" class="chat-bubble-img" alt="Chud Assist" />
+  </button>
   <div class="chat-panel" id="chat-panel">
     <div class="chat-header">
-      <span style="font-size:1.3rem">🦆</span>
+      <img src="./chad transparent.png" style="width:36px;height:36px;object-fit:contain;flex-shrink:0" alt="Chud Assist" />
       <div>
-        <div class="chat-header-title">Platypus</div>
-        <div class="chat-header-sub">Your AI nutrition coach</div>
+        <div class="chat-header-title">Chud Assist</div>
+        <div class="chat-header-sub">Your brutally honest coach</div>
       </div>
       <span class="chat-online"></span>
     </div>
     <div class="chat-messages" id="chat-messages">
-      <div class="chat-msg bot">Hey! I'm Platypus 🦆 your nutrition coach. Ask me anything about your meals, macros, or goals!</div>
+      <div class="chat-msg bot">Oh great, you opened the chat. What do you want, chud? Ask me about your macros before I lose respect for you entirely.</div>
     </div>
     <div class="chat-footer">
       <input class="chat-input" id="chat-input" type="text" placeholder="Ask me anything..." onkeydown="if(event.key==='Enter') sendChat()" />

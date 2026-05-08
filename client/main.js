@@ -258,7 +258,7 @@ async function sendChat() {
   appendMsg(message, 'user');
   chatHistory.push({ role: 'user', content: message });
 
-  const typing = appendMsg('Platypus is thinking...', 'bot typing');
+  const typing = appendMsg('Chud Assist is judging you...', 'bot typing');
 
   try {
     const res = await fetch(`${API}/api/chat`, {
@@ -274,7 +274,7 @@ async function sendChat() {
     chatHistory.push({ role: 'assistant', content: reply });
   } catch {
     typing.remove();
-    appendMsg('Could not reach Platypus right now. Try again!', 'bot');
+    appendMsg('Chud Assist is unreachable. Probably embarrassed for you.', 'bot');
   }
 
   input.disabled = false;
@@ -291,4 +291,43 @@ async function loadJudge() {
   } catch {}
 }
 
+// ── Chud Assist random pings ──
+const CHUD_PINGS = [
+  "Hey chud. Have you logged your meals today or are you too busy larping as a healthy person?",
+  "Still just sitting there? Your protein isn't going to eat itself. GET UP.",
+  "Just a reminder that you're probably a big back and your macros are suffering because of it.",
+  "Bro your calorie goal isn't decorative. Log something.",
+  "You haven't talked to me in a while. Either you're ascending or you're chumming and eating garbage. Which is it?",
+  "Imagine not hitting your protein today. Actually don't, you're probably already doing it.",
+  "Quick check-in: are you being a chud right now? Be honest.",
+  "Your future self is disappointed in your current self. Just letting you know.",
+  "Log your meals or I will personally judge you forever.",
+  "You could be ascending right now. Instead you're... whatever this is.",
+  "Drink water, log your food, stop larping. That's the whole plan.",
+  "The gap between your calorie goal and what you actually eat is called 'cope'. Fix it.",
+];
+
+function openChatFromNotif() {
+  const notif = document.getElementById('chud-notif');
+  notif.classList.remove('show');
+  const panel = document.getElementById('chat-panel');
+  if (!panel.classList.contains('open')) toggleChat();
+}
+
+function scheduleChudPing() {
+  // Random interval between 45s and 3 minutes
+  const delay = 45000 + Math.random() * 135000;
+  setTimeout(() => {
+    const notif = document.getElementById('chud-notif');
+    if (!notif) return scheduleChudPing();
+    const msg = CHUD_PINGS[Math.floor(Math.random() * CHUD_PINGS.length)];
+    notif.textContent = msg;
+    notif.classList.add('show');
+    // Auto-dismiss after 8 seconds
+    setTimeout(() => notif.classList.remove('show'), 8000);
+    scheduleChudPing();
+  }, delay);
+}
+
 init();
+scheduleChudPing();
