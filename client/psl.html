@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ascend.AI — PSL Rating</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+
+  <div id="page" style="display:none">
+    <div class="topbar">
+      <div class="topbar-logo">
+        <span class="topbar-platy">
+          <svg width="26" height="26" viewBox="0 0 140 140" fill="none">
+            <ellipse cx="70" cy="86" rx="42" ry="31" fill="#ff7c4a"/>
+            <ellipse cx="70" cy="91" rx="26" ry="19" fill="#ffb89e"/>
+            <ellipse cx="70" cy="54" rx="28" ry="26" fill="#ff7c4a"/>
+            <ellipse cx="95" cy="60" rx="19" ry="9" fill="#ff4d8f"/>
+            <circle cx="80" cy="49" r="7" fill="white"/>
+            <circle cx="80" cy="49" r="4" fill="#1a0a0a"/>
+            <circle cx="82" cy="47" r="1.5" fill="white"/>
+            <ellipse cx="54" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(-8 54 116)"/>
+            <ellipse cx="86" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(8 86 116)"/>
+          </svg>
+        </span>
+        Ascend.AI
+      </div>
+      <nav class="topbar-nav">
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/meals.html" class="nav-link">Meals</a>
+        <a href="/feed.html" class="nav-link">Feed</a>
+        <a href="/trainer.html" class="nav-link">Trainer</a>
+        <a href="/psl.html" class="nav-link active">PSL</a>
+      </nav>
+      <div class="user-info" id="user-info-wrap" style="position:relative">
+        <button class="user-trigger" onclick="toggleProfileDropdown()">
+          <div class="avatar-placeholder" id="avatar-initial">?</div>
+          <span class="user-name" id="user-name-display"></span>
+          <span class="dropdown-chevron" id="profile-chevron">▾</span>
+        </button>
+        <button class="logout-btn" onclick="logout()">Sign out</button>
+        <div class="profile-dropdown" id="profile-dropdown">
+          <div class="dropdown-header">
+            <div>
+              <div class="dropdown-title">✨ Your Profile</div>
+              <div class="dropdown-subtitle">Sets your calorie &amp; macro targets</div>
+            </div>
+            <button class="dropdown-close" onclick="toggleProfileDropdown()">✕</button>
+          </div>
+          <div class="profile-dropdown-grid">
+            <div class="field"><label>Age</label><input type="number" id="field-age" placeholder="e.g. 20" min="1" max="120" /></div>
+            <div class="field"><label>Sex</label><select id="field-sex"><option value="">Select...</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+            <div class="field"><label>Height (cm)</label><input type="number" id="field-height" placeholder="e.g. 170" /></div>
+            <div class="field"><label>Weight (kg)</label><input type="number" id="field-weight" placeholder="e.g. 70" step="0.1" /></div>
+            <div class="field" style="grid-column:span 2"><label>Activity Level</label><select id="field-activity"><option value="">Select...</option><option value="sedentary">Sedentary</option><option value="light">Lightly Active</option><option value="moderate">Moderately Active</option><option value="active">Active</option><option value="very_active">Very Active</option></select></div>
+            <div class="field" style="grid-column:span 2"><label>Goal</label><select id="field-goal"><option value="">Select...</option><option value="lose">Lose Weight</option><option value="maintain">Maintain</option><option value="gain">Gain Weight</option></select></div>
+          </div>
+          <button class="save-btn" id="profile-save-btn" onclick="saveProfile()" style="width:100%;margin-top:1.25rem">Save Profile 💾</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main" style="max-width:780px">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">📸 PSL Rating</h1>
+          <p class="page-subtitle">Upload a face photo and get brutally rated on the PSL scale</p>
+        </div>
+      </div>
+
+      <!-- Upload state -->
+      <div class="card" id="upload-card">
+        <div class="section-title">Step 1 — Upload your face</div>
+        <div class="psl-disclaimer">⚠️ This is AI-generated satire using looksmaxxing culture. Not medical or professional advice. Photos are never stored.</div>
+        <input type="file" id="psl-file" accept="image/*" style="display:none" onchange="onPslPhoto(this)" />
+        <input type="file" id="psl-camera" accept="image/*" capture="user" style="display:none" onchange="onPslPhoto(this)" />
+        <div class="drop-zone psl-drop" id="psl-drop" onclick="document.getElementById('psl-file').click()">
+          <div class="drop-zone-placeholder" id="psl-placeholder">
+            <span>🤳</span>
+            <p>Click or drag a face photo here</p>
+            <span class="drop-hint">JPG / PNG — not saved or stored</span>
+          </div>
+          <img id="psl-preview" alt="face preview" />
+          <button class="remove-photo-btn" id="psl-remove" onclick="removePslPhoto(event)">✕</button>
+        </div>
+        <div style="display:flex;gap:0.75rem;margin-top:0.75rem">
+          <button class="outline-btn camera-btn" onclick="document.getElementById('psl-camera').click()" style="flex:1">📸 Take Selfie</button>
+          <button class="save-btn" id="psl-btn" onclick="runPsl()" disabled style="flex:2;margin-top:0">🔍 Rate Me</button>
+        </div>
+      </div>
+
+      <!-- Analyzing state -->
+      <div class="card" id="analyzing-card" style="display:none">
+        <div class="analyzing-content">
+          <div class="spinner"></div>
+          <h3 style="font-family:'Nunito',sans-serif;font-weight:800;margin-bottom:0.5rem">Analyzing your face…</h3>
+          <p style="color:var(--muted)">The PSL Oracle is judging you. Hold still.</p>
+        </div>
+      </div>
+
+      <!-- Results state -->
+      <div id="results-card" style="display:none">
+
+        <!-- Score hero -->
+        <div class="card psl-hero-card">
+          <div class="psl-hero">
+            <div class="psl-platy-col">
+              <img id="psl-platy-img" class="psl-platy-img" src="" alt="platypus" style="display:none" />
+              <svg id="psl-platy-svg" class="psl-platy-img" viewBox="0 0 140 140" fill="none">
+                <path d="M28 88 Q8 72 11 96 Q14 112 31 102 Z" fill="#e86030"/>
+                <ellipse cx="70" cy="86" rx="42" ry="31" fill="#ff7c4a"/>
+                <ellipse cx="70" cy="91" rx="26" ry="19" fill="#ffb89e"/>
+                <ellipse cx="70" cy="54" rx="28" ry="26" fill="#ff7c4a"/>
+                <ellipse cx="95" cy="60" rx="19" ry="9" fill="#ff4d8f"/>
+                <ellipse cx="107" cy="57" rx="2.5" ry="1.5" fill="#c02868"/>
+                <circle cx="80" cy="49" r="7" fill="white"/>
+                <circle cx="80" cy="49" r="4" fill="#1a0a0a"/>
+                <circle cx="82" cy="47" r="1.5" fill="white"/>
+                <ellipse cx="89" cy="58" rx="6" ry="3.5" fill="#ff4d8f" opacity="0.3"/>
+                <ellipse cx="54" cy="33" rx="9" ry="7" fill="#ff6030"/>
+                <ellipse cx="36" cy="97" rx="11" ry="7" fill="#e86030" transform="rotate(-25 36 97)"/>
+                <ellipse cx="104" cy="97" rx="11" ry="7" fill="#e86030" transform="rotate(25 104 97)"/>
+                <ellipse cx="54" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(-8 54 116)"/>
+                <ellipse cx="86" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(8 86 116)"/>
+                <text x="56" y="47" font-size="11" fill="#ff4d8f" opacity="0.75">♥</text>
+                <path d="M88 66 Q93 70 98 66" stroke="#c02868" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              </svg>
+              <div class="psl-bubble" id="psl-bubble"></div>
+            </div>
+            <div class="psl-score-col">
+              <div class="psl-score-number" id="psl-score">—</div>
+              <div class="psl-score-label">/ 10  PSL</div>
+              <div class="psl-tier-badge" id="psl-tier-badge">—</div>
+              <div class="psl-headline" id="psl-headline"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown -->
+        <div class="card">
+          <div class="section-title">📊 Breakdown</div>
+          <div class="psl-breakdown-grid">
+            <div class="psl-half">
+              <div class="psl-half-title psl-pos-title">✅ Working For You</div>
+              <ul class="psl-list psl-pos-list" id="psl-positives"></ul>
+            </div>
+            <div class="psl-half">
+              <div class="psl-half-title psl-neg-title">❌ Holding You Back</div>
+              <ul class="psl-list psl-neg-list" id="psl-negatives"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Roast -->
+        <div class="card">
+          <div class="section-title">🔥 Full Verdict</div>
+          <p class="psl-roast" id="psl-roast"></p>
+        </div>
+
+        <!-- Advice -->
+        <div class="card">
+          <div class="section-title">📈 Looksmaxxing Roadmap</div>
+          <p class="psl-advice" id="psl-advice"></p>
+        </div>
+
+        <div style="margin-top:1rem;text-align:center">
+          <button class="outline-btn" onclick="resetPsl()" style="margin-top:0">↺ Rate Again</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="./profile-dropdown.js"></script>
+  <script src="./psl.js"></script>
+</body>
+</html>
