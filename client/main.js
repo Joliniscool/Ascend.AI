@@ -20,6 +20,8 @@ function showDashboard(user) {
   document.getElementById('user-name-display').textContent = user.name || user.email;
   document.getElementById('welcome-msg').textContent = `Welcome back, ${user.name?.split(' ')[0] || 'friend'}! 🌸`;
   document.getElementById('avatar-initial').textContent = (user.name || user.email || '?')[0].toUpperCase();
+  loadJudge();
+  
 }
 
 async function loadStats() {
@@ -222,6 +224,15 @@ async function sendChat() {
   input.disabled = false;
   sendBtn.disabled = false;
   input.focus();
+}
+
+async function loadJudge() {
+  try {
+    const res = await fetch(`${API}/api/judge`, { credentials: 'include' });
+    const data = await res.json();
+    const bubble = document.getElementById('platypus-bubble');
+    if (bubble) bubble.textContent = data.message;
+  } catch {}
 }
 
 init();

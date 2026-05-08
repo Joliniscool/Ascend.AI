@@ -15,8 +15,30 @@ router.get('/profile', isAuthenticated, async (req, res) => {
 router.put('/profile', isAuthenticated, async (req, res) => {
   try {
     const { age, sex, height, activityLevel, goal } = req.body;
-    const user = await User.findByIdAndUpdate(req.user._id, { age, sex, height, activityLevel, goal }, { new: true });
-    res.json(user);
+
+    const user = await User.findById(req.user._id);
+    const currentWeight = user.weightLog.at(-1)?.value;
+
+    let dailyCalorieGoal = user.dailyCalorieGoal;
+    if (currentWeight && height && age && sex && sex !== 'other') {
+      const bmr = sex === 'male'
+        ? 10 * currentWeight + 6.25 * height - 5 * age + 5
+        : 10 * currentWeight + 6.25 * height - 5 * age - 161;
+
+      const multipliers = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9 };
+      let tdee = bmr * (multipliers[activityLevel] || 1.2);
+
+      if (goal === 'lose') tdee -= 500;
+      if (goal === 'gain') tdee += 300;
+      dailyCalorieGoal = Math.round(tdee);
+    }
+
+    const updated = await User.findByIdAndUpdate(
+      req.user._id,
+      { age, sex, height, activityLevel, goal, ...(dailyCalorieGoal && { dailyCalorieGoal }) },
+      { new: true }
+    );
+    res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
