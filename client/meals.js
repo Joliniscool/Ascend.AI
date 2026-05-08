@@ -10,6 +10,7 @@ async function init() {
     document.getElementById('avatar-initial').textContent = (data.user.name || data.user.email || '?')[0].toUpperCase();
     document.getElementById('page').style.display = 'block';
     loadMeals();
+    loadProfile();
   } catch { window.location.href = '/'; }
 }
 

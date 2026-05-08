@@ -55,59 +55,6 @@ async function loadStats() {
   } catch {}
 }
 
-async function loadProfile() {
-  try {
-    const res = await fetch(`${API}/api/users/profile`, { credentials: 'include' });
-    const user = await res.json();
-    if (user.age) document.getElementById('field-age').value = user.age;
-    if (user.sex) document.getElementById('field-sex').value = user.sex;
-    if (user.height) document.getElementById('field-height').value = user.height;
-    if (user.activityLevel) document.getElementById('field-activity').value = user.activityLevel;
-    if (user.goal) document.getElementById('field-goal').value = user.goal;
-    if (user.weightLog?.length) document.getElementById('field-weight').value = user.weightLog.at(-1).value;
-  } catch {}
-}
-
-function toggleProfileDropdown() {
-  const dropdown = document.getElementById('profile-dropdown');
-  const chevron  = document.getElementById('profile-chevron');
-  const isOpen = dropdown.classList.toggle('open');
-  if (chevron) chevron.textContent = isOpen ? '▴' : '▾';
-}
-
-document.addEventListener('click', (e) => {
-  const wrap = document.getElementById('user-info-wrap');
-  if (wrap && !wrap.contains(e.target)) {
-    document.getElementById('profile-dropdown')?.classList.remove('open');
-    const chevron = document.getElementById('profile-chevron');
-    if (chevron) chevron.textContent = '▾';
-  }
-});
-
-async function saveProfile() {
-  const btn = document.getElementById('profile-save-btn');
-  btn.disabled = true; btn.textContent = 'Saving...';
-  const weight = document.getElementById('field-weight').value;
-  try {
-    await fetch(`${API}/api/users/profile`, {
-      method: 'PUT', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        age:           Number(document.getElementById('field-age').value)    || undefined,
-        sex:           document.getElementById('field-sex').value            || undefined,
-        height:        Number(document.getElementById('field-height').value) || undefined,
-        activityLevel: document.getElementById('field-activity').value       || undefined,
-        goal:          document.getElementById('field-goal').value           || undefined,
-        weight:        weight ? Number(weight) : undefined,
-      })
-    });
-    showToast('Profile saved! 🌸');
-    loadStats();
-    document.getElementById('profile-dropdown').classList.remove('open');
-    document.getElementById('profile-chevron').textContent = '▾';
-  } catch { showToast('Something went wrong ❌'); }
-  btn.disabled = false; btn.textContent = 'Save Profile 💾';
-}
 
 async function logout() {
   await fetch(`${API}/auth/logout`, { credentials: 'include' });

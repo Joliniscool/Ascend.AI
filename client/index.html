@@ -83,7 +83,11 @@
 
         <div class="profile-dropdown" id="profile-dropdown">
           <div class="dropdown-header">
-            <span class="dropdown-title">✨ Your Profile</span>
+            <div>
+              <div class="dropdown-title">✨ Your Profile</div>
+              <div class="dropdown-subtitle">Sets your calorie &amp; macro targets</div>
+            </div>
+            <button class="dropdown-close" onclick="toggleProfileDropdown()">✕</button>
           </div>
           <div class="profile-dropdown-grid">
             <div class="field">
@@ -296,6 +300,7 @@
 
   <div class="toast" id="toast"></div>
   <script src="./meal-details.js"></script>
+  <script src="./profile-dropdown.js"></script>
   <script src="./main.js"></script>
 </body>
 </html>
