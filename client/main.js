@@ -69,10 +69,9 @@ async function loadStats() {
     set('stat-cal-streak',  data.calorieStreak != null ? `${data.calorieStreak}d` : '—');
     set('stat-prot-streak', data.proteinStreak != null ? `${data.proteinStreak}d` : '—');
 
-    // Meals card: today's count is the headline; total + missed-today live in corners.
-    set('stat-meals-today',  data.mealsToday ?? 0);
-    set('stat-meals-total',  data.totalMeals ?? 0);
-    set('stat-meals-missed', data.missedToday ?? 0);
+    // Meals card: today's count is the headline; all-time total in TR corner.
+    set('stat-meals-today', data.mealsToday ?? 0);
+    set('stat-meals-total', data.totalMeals ?? 0);
 
     // Weight card: latest from log + goal target + first weight ever logged.
     set('stat-weight',       fmt(data.currentWeight));
