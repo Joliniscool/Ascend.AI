@@ -3,6 +3,8 @@ const API = '';
 let analyzeData = null;
 let reviewItems = [];
 let elapsedTimer = null;
+let searchDebounce = null;
+let lastSearchResults = [];
 
 async function init() {
   try {
@@ -94,6 +96,7 @@ async function startAnalyze() {
     analyzeData = data;
     reviewItems = data.items.map((item) => ({
       detected: item.detected,
+      source: 'ai',
       candidates: item.candidates || [],
       selectedFdcIdx: 0,
       grams: Math.max(0, Math.min(500, Math.round(item.estimatedGrams || 100))),
@@ -128,11 +131,13 @@ function renderReview() {
 
   const container = document.getElementById('detected-items');
   container.innerHTML = reviewItems.map((item, idx) => {
+    if (item.removed) return '';
+    const sourceLabel = item.source === 'manual' ? 'Manually added' : 'AI detected';
     if (item.candidates.length === 0) {
       return `
-        <div class="detected-item">
+        <div class="detected-item" id="item-row-${idx}">
           <div class="detected-item-header">
-            <span class="detected-label">AI detected: <em>${escapeHtml(item.detected)}</em></span>
+            <span class="detected-label">${sourceLabel}: <em>${escapeHtml(item.detected)}</em></span>
             <button class="item-remove-btn" onclick="removeItem(${idx})" title="Remove">✕</button>
           </div>
           <p style="color:var(--danger); font-size:0.85rem">No matches found in food database. This item will be skipped.</p>
@@ -149,7 +154,7 @@ function renderReview() {
     return `
       <div class="detected-item" id="item-row-${idx}">
         <div class="detected-item-header">
-          <span class="detected-label">AI detected: <em>${escapeHtml(item.detected)}</em></span>
+          <span class="detected-label">${sourceLabel}: <em>${escapeHtml(item.detected)}</em></span>
           <button class="item-remove-btn" onclick="removeItem(${idx})" title="Remove">✕</button>
         </div>
         <div class="field" style="margin-top:0.5rem">
@@ -190,6 +195,69 @@ function removeItem(idx) {
   const row = document.getElementById(`item-row-${idx}`);
   if (row) row.style.display = 'none';
   updateTotalsDisplay();
+}
+
+function toggleAddFood() {
+  const panel = document.getElementById('add-food-panel');
+  const icon = document.getElementById('add-food-icon');
+  const isOpen = panel.style.display === 'block';
+  panel.style.display = isOpen ? 'none' : 'block';
+  icon.textContent = isOpen ? '+' : '×';
+  if (!isOpen) {
+    document.getElementById('add-food-search').value = '';
+    document.getElementById('add-food-results').innerHTML = '';
+    document.getElementById('add-food-search').focus();
+  }
+}
+
+function onSearchTyping() {
+  const q = document.getElementById('add-food-search').value.trim();
+  if (searchDebounce) clearTimeout(searchDebounce);
+  if (q.length < 2) {
+    document.getElementById('add-food-results').innerHTML = '';
+    return;
+  }
+  searchDebounce = setTimeout(() => doFoodSearch(q), 220);
+}
+
+async function doFoodSearch(q) {
+  const container = document.getElementById('add-food-results');
+  container.innerHTML = '<div class="search-loading">Searching...</div>';
+  try {
+    const res = await fetch(`${API}/api/foods/search?q=${encodeURIComponent(q)}&limit=8`, { credentials: 'include' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    lastSearchResults = data.results || [];
+    if (lastSearchResults.length === 0) {
+      container.innerHTML = '<div class="search-empty">No matches in USDA database. Try a different term.</div>';
+      return;
+    }
+    container.innerHTML = lastSearchResults.map((r, i) => `
+      <div class="search-result-item" onclick="addFoodFromSearch(${r.fdcId})">
+        <div class="search-result-name">${escapeHtml(r.shortName || r.name)}</div>
+        <div class="search-result-meta">${r.per100g?.calories ?? 0} kcal · ${r.per100g?.protein ?? 0}g protein per 100g</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = `<div class="search-empty">Search failed: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function addFoodFromSearch(fdcId) {
+  const idx = lastSearchResults.findIndex(r => r.fdcId === fdcId);
+  if (idx < 0) return;
+  const food = lastSearchResults[idx];
+  reviewItems.push({
+    detected: food.shortName || food.name,
+    source: 'manual',
+    candidates: lastSearchResults.slice(0, 5),
+    selectedFdcIdx: Math.min(idx, 4),
+    grams: 100,
+    removed: false,
+  });
+  toggleAddFood();
+  renderReview();
+  showToast('Food added 🌸');
 }
 
 function computeMacros(item) {

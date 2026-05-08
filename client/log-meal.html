@@ -109,6 +109,16 @@
 
           <div class="detected-items" id="detected-items"></div>
 
+          <div class="add-food-section">
+            <button class="add-food-btn" id="add-food-btn" onclick="toggleAddFood()" type="button">
+              <span id="add-food-icon">+</span> Add Food the AI Missed
+            </button>
+            <div class="add-food-panel" id="add-food-panel" style="display:none">
+              <input type="text" id="add-food-search" placeholder="Search USDA database (e.g. 'salmon', 'avocado')..." oninput="onSearchTyping()" autocomplete="off" />
+              <div class="add-food-results" id="add-food-results"></div>
+            </div>
+          </div>
+
           <div class="totals-bar">
             <div class="totals-label">🌟 Total</div>
             <div class="totals-macros">

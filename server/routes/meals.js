@@ -46,12 +46,24 @@ function titleCase(s) {
     .join(' ');
 }
 
-function suggestMealName(detectedItems) {
-  const names = detectedItems.map(d => titleCase(d.food || '')).filter(Boolean);
+function suggestMealName(items) {
+  const sorted = [...items]
+    .filter(i => i && i.detected)
+    .sort((a, b) => {
+      const aProt = a.candidates?.[0]?.per100g?.protein ?? 0;
+      const bProt = b.candidates?.[0]?.per100g?.protein ?? 0;
+      return bProt - aProt;
+    });
+
+  const names = sorted.map(i => titleCase(i.detected)).filter(Boolean);
   if (names.length === 0) return 'Meal';
   if (names.length === 1) return names[0];
-  if (names.length === 2) return `${names[0]} & ${names[1]}`;
-  return `${names[0]}, ${names[1]} & More`;
+
+  const main = names[0];
+  const sides = names.slice(1);
+  if (sides.length === 1) return `${main} Bowl with ${sides[0]}`;
+  if (sides.length === 2) return `${main} Bowl with ${sides[0]} & ${sides[1]}`;
+  return `${main} Bowl with ${sides[0]}, ${sides[1]} & More`;
 }
 
 cloudinary.config({
@@ -115,7 +127,7 @@ router.post('/analyze', isAuthenticated, upload.single('image'), async (req, res
       candidates: await searchFoodCandidates(it.food, 5),
     })));
 
-    res.json({ imageUrl, suggestedName: suggestMealName(detected), items });
+    res.json({ imageUrl, suggestedName: suggestMealName(items), items });
   } catch (err) {
     console.error('Meal analyze error:', err);
     res.status(500).json({ error: err.message });
