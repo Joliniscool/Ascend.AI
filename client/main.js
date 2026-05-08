@@ -240,38 +240,58 @@ async function loadJudge() {
 
 // ── Chud Assist random pings ──
 const CHUD_PINGS = [
-  "Hey chud. Have you logged your meals today or are you too busy larping as a healthy person?",
-  "Still just sitting there? Your protein isn't going to eat itself. GET UP.",
-  "Just a reminder that you're probably a big back and your macros are suffering because of it.",
-  "Bro your calorie goal isn't decorative. Log something.",
-  "You haven't talked to me in a while. Either you're ascending or you're chumming and eating garbage. Which is it?",
-  "Imagine not hitting your protein today. Actually don't, you're probably already doing it.",
-  "Quick check-in: are you being a chud right now? Be honest.",
-  "Your future self is disappointed in your current self. Just letting you know.",
-  "Log your meals or I will personally judge you forever.",
-  "You could be ascending right now. Instead you're... whatever this is.",
-  "Drink water, log your food, stop larping. That's the whole plan.",
-  "The gap between your calorie goal and what you actually eat is called 'cope'. Fix it.",
+  "Stop larping as someone who has their diet together and actually log your meals.",
+  "Your clavicular width is genetic. Your body fat percentage is not. Log something.",
+  "Blackpill cope won't save you. Protein and discipline will. Get moving.",
+  "Are you mewing right now? Tongue on the roof of your mouth. You're welcome.",
+  "Every chud thinks they'll start tomorrow. Tomorrow never comes. Log today.",
+  "You're one missed protein goal away from being permanently framemogged by everyone around you.",
+  "The difference between a chad and a chud is about 150g of protein per day. Do the math.",
+  "Jestermaxxing is a cope. Looksmaxxing is the way. Start with your diet.",
+  "Even chadlites track their macros. Stop incel-posting on your own nutrition.",
+  "Big backs don't ascend. Log your food or stay a chud forever.",
+  "Your androgenic potential is being wasted by your diet. Fix it.",
+  "Mogging starts in the kitchen. What are you eating today?",
+  "You could be ascending right now. Instead you're doing... this.",
+  "Drink water. Hit protein. Stop chumming on junk food. That's literally it.",
+  "BIMAX won't fix a bad diet. Start with the basics, chud.",
+  "The foids aren't going to start noticing you until your macros do.",
 ];
 
 function openChatFromNotif() {
   const notif = document.getElementById('chud-notif');
-  notif.classList.remove('show');
+  if (notif) notif.classList.remove('show');
   const panel = document.getElementById('chat-panel');
   if (!panel.classList.contains('open')) toggleChat();
 }
 
-function scheduleChudPing() {
-  // Random interval between 45s and 3 minutes
-  const delay = 45000 + Math.random() * 135000;
-  setTimeout(() => {
+function fireChudPing() {
+  const msg = CHUD_PINGS[Math.floor(Math.random() * CHUD_PINGS.length)];
+
+  // Always inject into chat history (visible when user opens)
+  appendMsg(msg, 'bot');
+  chatHistory.push({ role: 'assistant', content: msg });
+
+  // If chat is closed, also show the floating notif
+  const panel = document.getElementById('chat-panel');
+  if (!panel.classList.contains('open')) {
     const notif = document.getElementById('chud-notif');
-    if (!notif) return scheduleChudPing();
-    const msg = CHUD_PINGS[Math.floor(Math.random() * CHUD_PINGS.length)];
-    notif.textContent = msg;
-    notif.classList.add('show');
-    // Auto-dismiss after 8 seconds
-    setTimeout(() => notif.classList.remove('show'), 8000);
+    if (notif) {
+      notif.textContent = msg;
+      notif.classList.add('show');
+      // Bounce the chad button
+      const btn = document.querySelector('.chat-bubble');
+      if (btn) { btn.classList.add('ping'); setTimeout(() => btn.classList.remove('ping'), 1000); }
+      setTimeout(() => notif.classList.remove('show'), 9000);
+    }
+  }
+}
+
+function scheduleChudPing() {
+  // Random interval between 30s and 2 minutes
+  const delay = 30000 + Math.random() * 90000;
+  setTimeout(() => {
+    fireChudPing();
     scheduleChudPing();
   }, delay);
 }
