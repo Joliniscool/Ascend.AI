@@ -30,8 +30,11 @@ const foodSchema = new mongoose.Schema({
   primaryName: { type: String },
   shortName:   { type: String },
   category:    { type: String },
-  dataType:    { type: String, enum: ['foundation', 'sr_legacy'] },
+  dataType:    { type: String, enum: ['foundation', 'sr_legacy', 'custom'] },
   per100g:     { type: per100gSchema, required: true },
+  // Populated only when dataType === 'custom' — owner of the user-created food.
+  userId:      { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdAt:   { type: Date, default: Date.now },
 });
 
 foodSchema.index(

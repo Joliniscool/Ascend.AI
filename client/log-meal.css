@@ -316,3 +316,151 @@
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* "Can't find it?" link in the search panel */
+.custom-food-link {
+  display: block;
+  width: 100%;
+  margin-top: 0.85rem;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.6rem 0.85rem;
+  cursor: pointer;
+  text-align: center;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.custom-food-link:hover {
+  color: var(--accent);
+  border-color: rgba(255, 124, 74, 0.4);
+  background: rgba(255, 124, 74, 0.04);
+}
+
+/* ── Custom food modal ── */
+.custom-food-modal {
+  position: fixed; inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.custom-food-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+.custom-food-content {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 1.75rem 1.85rem 1.5rem;
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+}
+.custom-food-close {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.custom-food-close:hover {
+  background: rgba(255, 95, 95, 0.12);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.custom-food-title {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 1.25rem;
+  margin-bottom: 0.4rem;
+}
+.custom-food-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+.custom-food-sub strong { color: var(--text); }
+.custom-section-title {
+  margin-top: 1.1rem;
+  margin-bottom: 0.6rem;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+.custom-required { color: var(--accent2); }
+.custom-unit {
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.custom-macros-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+.custom-micros-toggle {
+  margin-top: 1.1rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.025);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+.custom-micros-toggle:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,124,74,0.35);
+}
+.custom-micros-grid {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+}
+.custom-micros-grid .field label {
+  font-size: 0.65rem;
+}
+.custom-actions {
+  display: flex;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+  align-items: center;
+}
+.custom-actions .outline-btn {
+  padding: 0.55rem 1.1rem;
+  font-size: 0.85rem;
+}
+.custom-actions .save-btn {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+@media (max-width: 540px) {
+  .custom-macros-grid { grid-template-columns: repeat(2, 1fr); }
+  .custom-micros-grid { grid-template-columns: repeat(2, 1fr); }
+  .custom-actions { flex-direction: column-reverse; align-items: stretch; }
+}

@@ -407,4 +407,175 @@ function escapeHtml(s) {
   }[c]));
 }
 
+// ── Custom food modal ──────────────────────────────────────────────────
+// Lets users create a Food the USDA database doesn't have. Stored as
+// a Food doc with a negative fdcId, scoped by userId.
+
+const CUSTOM_MICRO_FIELDS = [
+  { key: 'fiber',        label: 'Fiber',        unit: 'g'  },
+  { key: 'sugar',        label: 'Sugar',        unit: 'g'  },
+  { key: 'saturatedFat', label: 'Sat. Fat',     unit: 'g'  },
+  { key: 'sodium',       label: 'Sodium',       unit: 'mg' },
+  { key: 'potassium',    label: 'Potassium',    unit: 'mg' },
+  { key: 'calcium',      label: 'Calcium',      unit: 'mg' },
+  { key: 'iron',         label: 'Iron',         unit: 'mg' },
+  { key: 'magnesium',    label: 'Magnesium',    unit: 'mg' },
+  { key: 'zinc',         label: 'Zinc',         unit: 'mg' },
+  { key: 'vitaminA',     label: 'Vit A',        unit: 'µg' },
+  { key: 'vitaminC',     label: 'Vit C',        unit: 'mg' },
+  { key: 'vitaminD',     label: 'Vit D',        unit: 'µg' },
+  { key: 'vitaminB12',   label: 'Vit B12',      unit: 'µg' },
+  { key: 'folate',       label: 'Folate',       unit: 'µg' },
+];
+
+(function injectCustomFoodModal() {
+  if (document.getElementById('custom-food-modal')) return;
+  const microRows = CUSTOM_MICRO_FIELDS.map(m => `
+    <div class="field">
+      <label>${m.label} <span class="custom-unit">(${m.unit})</span></label>
+      <input type="number" id="custom-${m.key}" min="0" step="0.1" placeholder="0" />
+    </div>
+  `).join('');
+
+  const html = `
+    <div id="custom-food-modal" class="custom-food-modal" style="display:none">
+      <div class="custom-food-backdrop" onclick="closeCustomFoodModal()"></div>
+      <div class="custom-food-content">
+        <button class="custom-food-close" onclick="closeCustomFoodModal()" title="Close">✕</button>
+        <h3 class="custom-food-title">🍳 Create a Custom Food</h3>
+        <p class="custom-food-sub">Enter macros <strong>per 100 grams</strong> — we'll scale to your serving size after.</p>
+
+        <div class="field">
+          <label>Food Name</label>
+          <input type="text" id="custom-name" placeholder="e.g. Mom's Lasagna" maxlength="80" />
+        </div>
+
+        <div class="custom-section-title">Macros (per 100 g)</div>
+        <div class="custom-macros-grid">
+          <div class="field">
+            <label>Calories <span class="custom-required">*</span></label>
+            <input type="number" id="custom-calories" min="0" max="1000" step="0.1" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Protein (g)</label>
+            <input type="number" id="custom-protein" min="0" step="0.1" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Carbs (g)</label>
+            <input type="number" id="custom-carbs" min="0" step="0.1" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Fat (g)</label>
+            <input type="number" id="custom-fat" min="0" step="0.1" placeholder="0" />
+          </div>
+        </div>
+
+        <button class="custom-micros-toggle" id="custom-micros-toggle" onclick="toggleCustomMicros()" type="button">
+          <span>+ Add micronutrients (optional)</span>
+          <span id="custom-micros-chevron">▾</span>
+        </button>
+        <div class="custom-micros-grid" id="custom-micros-body" style="display:none">
+          ${microRows}
+        </div>
+
+        <div class="custom-actions">
+          <button class="outline-btn" onclick="closeCustomFoodModal()" type="button" style="margin-top:0">Cancel</button>
+          <button class="save-btn" id="custom-save-btn" onclick="saveCustomFood()" type="button" style="margin-top:0">💾 Save & Add to Meal</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('custom-food-modal').style.display === 'flex') {
+      closeCustomFoodModal();
+    }
+  });
+})();
+
+function openCustomFoodModal() {
+  // Pre-fill name from search query if the user typed something there.
+  const searchVal = document.getElementById('add-food-search')?.value?.trim();
+  document.getElementById('custom-name').value = searchVal || '';
+  for (const k of ['calories', 'protein', 'carbs', 'fat']) {
+    document.getElementById(`custom-${k}`).value = '';
+  }
+  for (const m of CUSTOM_MICRO_FIELDS) {
+    const el = document.getElementById(`custom-${m.key}`);
+    if (el) el.value = '';
+  }
+  document.getElementById('custom-micros-body').style.display = 'none';
+  document.getElementById('custom-micros-chevron').textContent = '▾';
+  document.getElementById('custom-food-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('custom-name').focus(), 50);
+}
+
+function closeCustomFoodModal() {
+  document.getElementById('custom-food-modal').style.display = 'none';
+}
+
+function toggleCustomMicros() {
+  const body = document.getElementById('custom-micros-body');
+  const chev = document.getElementById('custom-micros-chevron');
+  const isOpen = body.style.display === 'grid';
+  body.style.display = isOpen ? 'none' : 'grid';
+  if (chev) chev.textContent = isOpen ? '▾' : '▴';
+}
+
+async function saveCustomFood() {
+  const name = document.getElementById('custom-name').value.trim();
+  const calories = Number(document.getElementById('custom-calories').value);
+  if (!name) { showToast('Name required ❌'); return; }
+  if (!calories || calories <= 0) { showToast('Calories per 100g required ❌'); return; }
+
+  const per100g = { calories };
+  for (const k of ['protein', 'carbs', 'fat']) {
+    per100g[k] = Number(document.getElementById(`custom-${k}`).value) || 0;
+  }
+  for (const m of CUSTOM_MICRO_FIELDS) {
+    const v = Number(document.getElementById(`custom-${m.key}`).value);
+    if (v > 0) per100g[m.key] = v;
+  }
+
+  const macroSum = per100g.protein + per100g.carbs + per100g.fat;
+  if (macroSum > 105) {
+    showToast('Protein + carbs + fat cannot exceed 100g per 100g ❌');
+    return;
+  }
+
+  const btn = document.getElementById('custom-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    const res = await fetch(`${API}/api/foods/custom`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, per100g }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Server returned ${res.status}`);
+    }
+    const food = await res.json();
+
+    // Auto-add the new food to the current meal's review items at 100g default.
+    reviewItems.push({
+      detected: food.shortName || food.name,
+      source: 'manual',
+      candidates: [food],
+      selectedFdcIdx: 0,
+      grams: 100,
+      removed: false,
+    });
+    closeCustomFoodModal();
+    // Close the search panel if it's open and re-render review.
+    const panel = document.getElementById('add-food-panel');
+    if (panel && panel.style.display === 'block') toggleAddFood();
+    renderReview();
+    showToast(`Added "${food.shortName || food.name}" 🌸`);
+  } catch (err) {
+    showToast(`Save failed: ${err.message} ❌`);
+  }
+  btn.disabled = false; btn.textContent = '💾 Save & Add to Meal';
+}
+
 init();

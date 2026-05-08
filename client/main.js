@@ -189,14 +189,16 @@ async function loadMeals() {
       grid.innerHTML = '<div class="meals-empty">No meals logged yet — add your first one above! 🌸</div>';
       return;
     }
-    const fmt = window.NUTRITION?.fmt1 || (n => String(n));
     const highlights = window.NUTRITION?.mealHighlights;
+    const macroTags  = window.NUTRITION?.macroTagsHtml;
     grid.innerHTML = meals.slice(0, 5).map(meal => {
       const hl = highlights ? highlights(meal) : { highProtein: false, highMicros: [] };
-      const chipsHtml = (hl.highProtein || hl.highMicros.length)
+      const hasChips = hl.highProtein || hl.highMicros.length || hl.badMicros?.length;
+      const chipsHtml = hasChips
         ? `<div class="meal-highlight-chips">
              ${hl.highProtein ? `<span class="meal-highlight-chip protein">💪 High protein</span>` : ''}
              ${hl.highMicros.map(h => `<span class="meal-highlight-chip">High ${h.label}</span>`).join('')}
+             ${(hl.badMicros || []).map(h => `<span class="meal-highlight-chip bad">⚠ High ${h.label}</span>`).join('')}
            </div>`
         : '';
       return `
@@ -206,17 +208,12 @@ async function loadMeals() {
           : `<div class="meal-img-placeholder">🍽️</div>`}
         <div class="meal-info">
           <div class="meal-name-text">${meal.name}</div>
-          <div class="meal-macros">
-            ${meal.calories ? `<span class="macro">🔥 ${fmt(meal.calories)} kcal</span>` : ''}
-            ${meal.protein  ? `<span class="macro" ${hl.highProtein ? 'style="color:#86efac;font-weight:800"' : ''}>💪 ${fmt(meal.protein)}g protein</span>` : ''}
-            ${meal.carbs    ? `<span class="macro">🌾 ${fmt(meal.carbs)}g carbs</span>` : ''}
-            ${meal.fat      ? `<span class="macro">🧈 ${fmt(meal.fat)}g fat</span>` : ''}
-          </div>
+          <div class="meal-macros">${macroTags ? macroTags(meal) : ''}</div>
           ${chipsHtml}
           <div class="meal-date">${new Date(meal.loggedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
         </div>
-        <div class="meal-card-actions" style="display:flex; gap:0.4rem">
-          <button class="meal-view-btn" onclick="openMealById('${meal._id}')" title="View details">👁️</button>
+        <div class="meal-card-actions" style="display:flex; gap:0.4rem; align-items:center">
+          <button class="meal-view-btn" onclick="openMealById('${meal._id}')" title="View details">View more →</button>
           <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
         </div>
       </div>

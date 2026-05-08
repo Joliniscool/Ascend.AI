@@ -20,18 +20,23 @@ const DV = {
   cholesterol:  { amount: 300,  unit: 'mg',  limit: true  },
 };
 
-// Top 10 micros surfaced on the dashboard panel (in display order).
+// Nutrients surfaced on the dashboard "Micronutrient Breakdown" panel.
+// Cholesterol + sugar lead because they're the most-actionable "limit" trackers
+// for a college-aged user; technically not micros but the limit-style %DV
+// display is the same shape, so they're folded into this list.
 const DASHBOARD_MICROS = [
-  { key: 'fiber',     icon: '🌾', label: 'Fiber',      color: '#86efac' },
-  { key: 'sodium',    icon: '🧂', label: 'Sodium',     color: '#fda4af' },
-  { key: 'potassium', icon: '🍌', label: 'Potassium',  color: '#fbbf24' },
-  { key: 'calcium',   icon: '🥛', label: 'Calcium',    color: '#bae6fd' },
-  { key: 'iron',      icon: '🩸', label: 'Iron',       color: '#fb7185' },
-  { key: 'magnesium', icon: '🥬', label: 'Magnesium',  color: '#a7f3d0' },
-  { key: 'vitaminA',  icon: '🥕', label: 'Vit A',      color: '#fdba74' },
-  { key: 'vitaminC',  icon: '🍊', label: 'Vit C',      color: '#fcd34d' },
-  { key: 'vitaminD',  icon: '☀️', label: 'Vit D',      color: '#fef08a' },
-  { key: 'vitaminB12',icon: '🐟', label: 'Vit B12',    color: '#c4b5fd' },
+  { key: 'cholesterol', icon: '🥚', label: 'Cholesterol', color: '#f87171' },
+  { key: 'sugar',       icon: '🍬', label: 'Sugar',       color: '#f9a8d4' },
+  { key: 'fiber',       icon: '🌾', label: 'Fiber',       color: '#86efac' },
+  { key: 'sodium',      icon: '🧂', label: 'Sodium',      color: '#fda4af' },
+  { key: 'potassium',   icon: '🍌', label: 'Potassium',   color: '#fbbf24' },
+  { key: 'calcium',     icon: '🥛', label: 'Calcium',     color: '#bae6fd' },
+  { key: 'iron',        icon: '🩸', label: 'Iron',        color: '#fb7185' },
+  { key: 'magnesium',   icon: '🥬', label: 'Magnesium',   color: '#a7f3d0' },
+  { key: 'vitaminA',    icon: '🥕', label: 'Vit A',       color: '#fdba74' },
+  { key: 'vitaminC',    icon: '🍊', label: 'Vit C',       color: '#fcd34d' },
+  { key: 'vitaminD',    icon: '☀️', label: 'Vit D',       color: '#fef08a' },
+  { key: 'vitaminB12',  icon: '🐟', label: 'Vit B12',     color: '#c4b5fd' },
 ];
 
 // Round to 1 decimal, drop trailing .0 for clean display.
@@ -64,25 +69,29 @@ function macroPctOfCalories(p, c, f) {
 }
 
 // Highlight rules for meal cards.
-// Returns { highProtein: bool, highMicros: [{key, label, dvPct}] }
+// Returns:
+//   highProtein: bool                  — protein-density signal (ratio-based)
+//   highMicros:  [{key, label, dvPct}] — meal is high in a "good" micro (≥30% DV)
+//   badMicros:   [{key, label, dvPct}] — meal is high in a "limit" micro (≥30% DV)
+// Both micro arrays are capped at top 2 to keep cards uncluttered.
 function mealHighlights(meal) {
-  const out = { highProtein: false, highMicros: [] };
+  const out = { highProtein: false, highMicros: [], badMicros: [] };
   if (meal.calories > 0 && meal.protein != null) {
     // ≥ 1.5g protein per 10kcal = ~10g per 100kcal = strongly protein-leaning.
     const proteinPer100 = (meal.protein / meal.calories) * 100;
     if (proteinPer100 >= 10) out.highProtein = true;
   }
-  // Any single micro contributing ≥ 30% of DV in one meal counts as "high in X".
   for (const m of DASHBOARD_MICROS) {
     const v = meal[m.key];
-    if (v && DV[m.key] && !DV[m.key].limit) {
-      const pct = dvPct(m.key, v);
-      if (pct >= 30) out.highMicros.push({ key: m.key, label: m.label, dvPct: pct });
-    }
+    if (!v || !DV[m.key]) continue;
+    const pct = dvPct(m.key, v);
+    if (pct < 30) continue;
+    const entry = { key: m.key, label: m.label, dvPct: pct };
+    if (DV[m.key].limit) out.badMicros.push(entry);
+    else                 out.highMicros.push(entry);
   }
-  // Cap at top 2 highlights so cards don't get noisy.
-  out.highMicros.sort((a, b) => b.dvPct - a.dvPct);
-  out.highMicros = out.highMicros.slice(0, 2);
+  out.highMicros = out.highMicros.sort((a, b) => b.dvPct - a.dvPct).slice(0, 2);
+  out.badMicros  = out.badMicros .sort((a, b) => b.dvPct - a.dvPct).slice(0, 2);
   return out;
 }
 
@@ -94,17 +103,21 @@ function microCellHtml(m, amount, pct, ringColor, dv) {
   return `
     <div class="micro-cell">
       <div class="micro-ring-wrap">
-        <svg width="38" height="38" viewBox="0 0 38 38">
+        <svg width="100%" height="100%" viewBox="0 0 38 38" preserveAspectRatio="xMidYMid meet">
           <circle cx="19" cy="19" r="${R}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="3.5"/>
           <circle cx="19" cy="19" r="${R}" fill="none" stroke="${ringColor}" stroke-width="3.5"
             stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${offset}"
             transform="rotate(-90 19 19)"/>
         </svg>
-        <div class="micro-ring-center">${m.icon}</div>
+        <div class="micro-ring-center"><span class="micro-emoji">${m.icon}</span></div>
       </div>
-      <div class="micro-pct" style="color:${ringColor}">${pct}%</div>
-      <div class="micro-label">${m.label}</div>
-      <div class="micro-amount">${fmt1(amount)}${dv?.unit || ''}</div>
+      <div class="micro-text">
+        <div class="micro-label">${m.label}</div>
+        <div class="micro-row2">
+          <span class="micro-pct" style="color:${ringColor}">${pct}%</span>
+          <span class="micro-amount">${fmt1(amount)}${dv?.unit || ''}</span>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -120,4 +133,29 @@ function microCellsHtml(todaysMicros) {
   }).join('');
 }
 
-window.NUTRITION = { DV, DASHBOARD_MICROS, fmt1, fmtPct, dvPct, macroPctOfCalories, mealHighlights, microCellHtml, microCellsHtml };
+// Absolute-amount thresholds for macro tag coloring (per single meal).
+// Distinct from `mealHighlights` (ratio-based) — this is "is this meal
+// objectively high in protein/fat regardless of total calories?"
+const MACRO_TAG_THRESHOLDS = {
+  proteinHigh: 40,
+  fatHigh:     40,
+};
+
+function macroTagsHtml(meal) {
+  const cals = meal.calories;
+  const p = meal.protein, c = meal.carbs, f = meal.fat;
+  const pCls = (p || 0) >= MACRO_TAG_THRESHOLDS.proteinHigh ? ' macro-high-protein' : '';
+  const fCls = (f || 0) >= MACRO_TAG_THRESHOLDS.fatHigh     ? ' macro-high-fat'     : '';
+  return [
+    cals ? `<span class="macro">🔥 ${fmt1(cals)} kcal</span>` : '',
+    p    ? `<span class="macro${pCls}">💪 ${fmt1(p)}g protein</span>` : '',
+    c    ? `<span class="macro">🌾 ${fmt1(c)}g carbs</span>` : '',
+    f    ? `<span class="macro${fCls}">🧈 ${fmt1(f)}g fat</span>` : '',
+  ].filter(Boolean).join('');
+}
+
+window.NUTRITION = {
+  DV, DASHBOARD_MICROS, MACRO_TAG_THRESHOLDS,
+  fmt1, fmtPct, dvPct, macroPctOfCalories, mealHighlights,
+  microCellHtml, microCellsHtml, macroTagsHtml,
+};

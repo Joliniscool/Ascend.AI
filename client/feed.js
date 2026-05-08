@@ -1,5 +1,6 @@
 const API = '';
 let currentUser = null;
+let _mealsCache = [];
 
 async function init() {
   try {
@@ -20,6 +21,7 @@ async function loadFeed() {
   try {
     const res = await fetch(`${API}/api/meals/feed`, { credentials: 'include' });
     const meals = await res.json();
+    _mealsCache = meals;
     renderFeed(meals);
     meals.forEach(meal => loadComments(meal._id));
   } catch {
@@ -33,24 +35,24 @@ function renderFeed(meals) {
     list.innerHTML = '<div class="meals-empty">No meals in the feed yet. Be the first! 🌸</div>';
     return;
   }
-  const fmt = window.NUTRITION?.fmt1 || (n => String(n));
+  // Wire up the meal-details modal so the View More button can find meals by id.
+  if (typeof setMealSource === 'function') setMealSource(meals);
+
   const highlights = window.NUTRITION?.mealHighlights;
+  const macroTags  = window.NUTRITION?.macroTagsHtml;
   list.innerHTML = meals.map(meal => {
     const user = meal.user || {};
     const hl = highlights ? highlights(meal) : { highProtein: false, highMicros: [] };
     const imageHtml = meal.imageUrl
       ? `<img src="${meal.imageUrl}" class="feed-meal-img" alt="${meal.name}" />`
       : '';
-    const macros = [
-      meal.calories ? `<span class="macro">🔥 ${fmt(meal.calories)} kcal</span>` : '',
-      meal.protein  ? `<span class="macro" ${hl.highProtein ? 'style="color:#86efac;font-weight:800"' : ''}>💪 ${fmt(meal.protein)}g protein</span>` : '',
-      meal.carbs    ? `<span class="macro">🌾 ${fmt(meal.carbs)}g carbs</span>` : '',
-      meal.fat      ? `<span class="macro">🧈 ${fmt(meal.fat)}g fat</span>` : '',
-    ].filter(Boolean).join('');
-    const chipsHtml = (hl.highProtein || hl.highMicros.length)
+    const macros = macroTags ? macroTags(meal) : '';
+    const hasChips = hl.highProtein || hl.highMicros.length || hl.badMicros?.length;
+    const chipsHtml = hasChips
       ? `<div class="meal-highlight-chips">
            ${hl.highProtein ? `<span class="meal-highlight-chip protein">💪 High protein</span>` : ''}
            ${hl.highMicros.map(h => `<span class="meal-highlight-chip">High ${h.label}</span>`).join('')}
+           ${(hl.badMicros || []).map(h => `<span class="meal-highlight-chip bad">⚠ High ${h.label}</span>`).join('')}
          </div>`
       : '';
 
@@ -62,6 +64,7 @@ function renderFeed(meals) {
             <div class="feed-username">${user.name || 'Unknown'}</div>
             <div class="feed-time">${timeAgo(meal.loggedAt)}</div>
           </div>
+          <button class="meal-view-btn feed-view-btn" onclick="openMealById('${meal._id}')" title="View details">View more →</button>
         </div>
         ${imageHtml}
         <div class="feed-meal-name">${meal.name}</div>
@@ -331,10 +334,33 @@ function getTier(score) {
   return [...TIERS].reverse().find(t => score >= t.min) || TIERS[0];
 }
 
+// ── Drag-to-rate ascension bar ────────────────────────────────────────────────
+// Two markers on the same gradient track:
+//   - PLATYPUS  (large, draggable) = THIS user's own rating. Starts at the
+//     algorithmic baseline if the user hasn't rated yet, so dragging the
+//     platypus is how you cast or update your vote.
+//   - SMALL DOT (visible only when ratingCount > 0) = the COMMUNITY display
+//     score, i.e. algo + every user rating averaged together.
+// Tier labels (Chudding / Larping / Ascending / etc.) are surfaced in the meta
+// row instead of raw numbers — the user explicitly didn't want numeric scores.
 function ascensionBarHtml(meal) {
-  const score = calcHealthScore(meal);
-  if (score === null) return '';
-  const tier = getTier(score);
+  // algoScore comes from the server (calcHealthScore + Qwen healthScore).
+  // For meals that haven't been enriched (legacy paths), fall back to client heuristic.
+  const algo = (typeof meal.algoScore === 'number')
+    ? meal.algoScore
+    : calcHealthScore(meal);
+  if (algo === null) return '';
+
+  const myRating    = (typeof meal.myRating === 'number') ? meal.myRating : null;
+  const community   = (typeof meal.displayScore === 'number') ? meal.displayScore : algo;
+  const ratingCount = meal.ratingCount || 0;
+
+  // The platypus position represents your current vote (defaults to the
+  // algorithmic baseline so users have a meaningful starting point to nudge).
+  const yourScore = myRating != null ? myRating : algo;
+  const yourTier      = getTier(yourScore);
+  const communityTier = getTier(community);
+
   const platypusSvg = `<svg width="22" height="22" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
     <ellipse cx="70" cy="86" rx="42" ry="31" fill="#ff7c4a"/>
     <ellipse cx="70" cy="91" rx="26" ry="19" fill="#ffb89e"/>
@@ -347,19 +373,133 @@ function ascensionBarHtml(meal) {
     <ellipse cx="86" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(8 86 116)"/>
   </svg>`;
 
+  // Meta string: tier labels only — never raw numbers. Color-codes each tier.
+  const metaText = ratingCount > 0 && myRating != null
+    ? `You think: <strong style="color:${yourTier.color}">${yourTier.label}</strong>
+       <span class="ascension-sep">·</span>
+       Community: <strong style="color:${communityTier.color}">${communityTier.label}</strong>
+       <span class="ascension-sep">·</span>
+       ${ratingCount} rating${ratingCount !== 1 ? 's' : ''}`
+    : ratingCount > 0
+    ? `Community: <strong style="color:${communityTier.color}">${communityTier.label}</strong>
+       <span class="ascension-sep">·</span>
+       ${ratingCount} rating${ratingCount !== 1 ? 's' : ''}`
+    : myRating != null
+    ? `You think: <strong style="color:${yourTier.color}">${yourTier.label}</strong>`
+    : `Starting tier: <strong style="color:${yourTier.color}">${yourTier.label}</strong>`;
+
+  const hintText = myRating != null
+    ? 'Drag the platypus to update your rating'
+    : 'Drag the platypus to rate this meal';
+
+  // Community dot only renders if at least one user has rated, so an unrated
+  // meal isn't visually cluttered with two markers stacked on the same spot.
+  const communityDotHtml = ratingCount > 0
+    ? `<div class="ascension-icon ascension-icon-community" style="left:${community}%" title="Community average"></div>`
+    : '';
+
   return `
     <div class="ascension-wrap">
       <div class="ascension-bar-row">
         <span class="ascension-end-label">Chud</span>
-        <div class="ascension-track">
-          <div class="ascension-icon" style="left:${score}%">${platypusSvg}</div>
+        <div class="ascension-track" data-meal-id="${meal._id}" data-algo="${algo}" onpointerdown="onAscensionPointerDown(event)">
+          ${communityDotHtml}
+          <div class="ascension-icon ascension-icon-mine" style="left:${yourScore}%" title="Your rating">${platypusSvg}</div>
         </div>
         <span class="ascension-end-label">Ascend</span>
       </div>
-      <div class="ascension-badge" style="background:${tier.color}22; color:${tier.color}; border-color:${tier.color}55">
-        ${tier.label}
+      <div class="ascension-meta-row">
+        <span class="ascension-meta">${metaText}</span>
+        <span class="ascension-badge" style="background:${yourTier.color}22; color:${yourTier.color}; border-color:${yourTier.color}55">${yourTier.label}</span>
       </div>
+      <div class="ascension-hint">${hintText}</div>
     </div>`;
+}
+
+// ── Drag-to-rate ──────────────────────────────────────────────────────
+let _ratingDragState = null;
+
+function onAscensionPointerDown(e) {
+  const track = e.currentTarget;
+  const mealId = track.dataset.mealId;
+  if (!mealId) return;
+  _ratingDragState = { track, mealId, committed: false };
+  track.setPointerCapture?.(e.pointerId);
+  track.classList.add('ascension-track-dragging');
+  updateRatingPreview(e);
+  window.addEventListener('pointermove', onAscensionPointerMove);
+  window.addEventListener('pointerup', onAscensionPointerUp, { once: true });
+  e.preventDefault();
+}
+
+function onAscensionPointerMove(e) {
+  if (!_ratingDragState) return;
+  updateRatingPreview(e);
+}
+
+async function onAscensionPointerUp(e) {
+  if (!_ratingDragState) return;
+  window.removeEventListener('pointermove', onAscensionPointerMove);
+  const score = computeRatingFromPointer(_ratingDragState.track, e);
+  const { track, mealId } = _ratingDragState;
+  track.classList.remove('ascension-track-dragging');
+  _ratingDragState = null;
+  await commitRating(mealId, score);
+}
+
+function computeRatingFromPointer(track, e) {
+  const rect = track.getBoundingClientRect();
+  const x = Math.max(0, Math.min(rect.width, (e.clientX || 0) - rect.left));
+  return Math.round((x / rect.width) * 100);
+}
+
+function updateRatingPreview(e) {
+  if (!_ratingDragState) return;
+  const score = computeRatingFromPointer(_ratingDragState.track, e);
+  // The platypus IS the user's rating marker now — move it directly so the
+  // user sees their vote land in real time without any flicker / dot creation.
+  const mine = _ratingDragState.track.querySelector('.ascension-icon-mine');
+  if (mine) mine.style.left = `${score}%`;
+}
+
+async function commitRating(mealId, score) {
+  try {
+    const res = await fetch(`${API}/api/meals/${mealId}/rate`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Server returned ${res.status}`);
+    }
+    const data = await res.json();
+    // Patch the meal in our cached source list and re-render just that card.
+    const meal = _mealsCache?.find(m => String(m._id) === String(mealId));
+    if (meal) {
+      meal.myRating     = data.myRating;
+      meal.ratingCount  = data.ratingCount;
+      meal.userAvgScore = data.userAvgScore;
+      meal.displayScore = data.displayScore;
+      rerenderCard(meal);
+    }
+    showToast('Rating saved 🌸');
+  } catch (err) {
+    showToast(`Rating failed: ${err.message} ❌`);
+  }
+}
+
+function rerenderCard(meal) {
+  const card = document.getElementById(`card-${meal._id}`);
+  if (!card) return;
+  // Swap just the ascension-wrap inside the card so we don't blow away the
+  // open comments thread.
+  const oldBar = card.querySelector('.ascension-wrap');
+  if (!oldBar) return;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = ascensionBarHtml(meal);
+  const newBar = tmp.firstElementChild;
+  oldBar.replaceWith(newBar);
 }
 
 function userAvatarHtml(user, size = 36) {

@@ -190,18 +190,22 @@
   background: var(--surface2);
   border: 1px solid var(--border);
   color: var(--accent);
-  width: 32px;
   height: 32px;
-  border-radius: 8px;
+  padding: 0 0.85rem;
+  border-radius: 100px;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 0.3rem;
   transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .meal-view-btn:hover {
   background: rgba(255, 124, 74, 0.12);
   border-color: var(--accent);
+  transform: translateY(-1px);
 }

@@ -6,6 +6,8 @@ const isAuthenticated = require('../middleware/isAuthenticated');
 const Meal = require('../models/Meal');
 const User = require('../models/User');
 const Food = require('../models/Food');
+const Rating = require('../models/Rating');
+const { calcHealthScore } = require('../utils/healthScore');
 
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL
   || 'https://chdeng--food-ml-service-fastapi-app.modal.run/analyze';
@@ -184,7 +186,14 @@ router.post('/confirm', isAuthenticated, async (req, res) => {
     }
 
     const fdcIds = items.map(i => Number(i.fdcId)).filter(id => !Number.isNaN(id));
-    const foods = await Food.find({ fdcId: { $in: fdcIds } }).lean();
+    // USDA foods are public; custom foods only resolve for their owner.
+    const foods = await Food.find({
+      fdcId: { $in: fdcIds },
+      $or: [
+        { dataType: { $ne: 'custom' } },
+        { dataType: 'custom', userId: req.user._id },
+      ],
+    }).lean();
     const foodMap = new Map(foods.map(f => [f.fdcId, f]));
 
     const MICRO_KEYS = [
@@ -279,10 +288,126 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/meals/feed
+// ─────────────────────────────────────────────────────────────────────────────
+// Public meals (most recent 30) enriched with crowdsourced rating data so each
+// feed card can render: the user's own platypus position, the small community-
+// average dot, the count of ratings, and a tier label — all without N+1 query
+// patterns. Three Mongo round-trips total: meals, rating-aggregates, my-rating.
+// ─────────────────────────────────────────────────────────────────────────────
 router.get('/feed', isAuthenticated, async (req, res) => {
   try {
-    const meals = await Meal.find({ isPublic: true }).populate('user', 'name avatar').sort({ loggedAt: -1 }).limit(30);
-    res.json(meals);
+    const meals = await Meal.find({ isPublic: true })
+      .populate('user', 'name avatar')
+      .sort({ loggedAt: -1 })
+      .limit(30)
+      .lean();
+    if (meals.length === 0) return res.json([]);
+
+    const mealIds = meals.map(m => m._id);
+
+    // Single aggregation pipeline groups all ratings for the 30 visible meals.
+    // Cheaper than 30 separate Rating.find().count() pairs by ~30x.
+    const aggResults = await Rating.aggregate([
+      { $match: { meal: { $in: mealIds } } },
+      { $group: {
+          _id: '$meal',
+          ratingSum:   { $sum: '$score' },
+          ratingCount: { $sum: 1 },
+      } },
+    ]);
+    const aggByMeal = new Map(aggResults.map(r => [String(r._id), r]));
+
+    // Pull the current user's own ratings in one query so we can render their
+    // platypus marker at the right position without a per-card fetch.
+    const myRatings = await Rating.find({
+      meal: { $in: mealIds }, user: req.user._id,
+    }).select('meal score').lean();
+    const mineByMeal = new Map(myRatings.map(r => [String(r.meal), r.score]));
+
+    // Compose the displayed (community) score per meal:
+    //   displayScore = (algoScore + Σ userRatings) / (1 + ratingCount)
+    // Treating algoScore as a fixed extra voter prevents low-volume thrash —
+    // a single 5/100 rating from one user shouldn't flip a meal's tier alone.
+    const enriched = meals.map(m => {
+      const algo        = calcHealthScore(m);
+      const agg         = aggByMeal.get(String(m._id));
+      const ratingSum   = agg?.ratingSum   || 0;
+      const ratingCount = agg?.ratingCount || 0;
+      const myRating    = mineByMeal.get(String(m._id)) ?? null;
+      const displayScore = algo == null
+        ? null
+        : Math.round((algo + ratingSum) / (1 + ratingCount));
+      const userAvg = ratingCount > 0 ? Math.round(ratingSum / ratingCount) : null;
+      return {
+        ...m,
+        algoScore:    algo,
+        userAvgScore: userAvg,
+        ratingCount,
+        myRating,
+        displayScore,
+      };
+    });
+
+    res.json(enriched);
+  } catch (err) {
+    console.error('Feed fetch error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/meals/:id/rate    body: { score: 0..100 }
+// ─────────────────────────────────────────────────────────────────────────────
+// Upsert the caller's rating for a meal. The compound (meal, user) unique
+// index on Rating means findOneAndUpdate({...}, {...}, { upsert: true })
+// becomes the natural way to express "create-or-update one rating per user
+// per meal" — no race condition between check-then-create.
+//
+// Recomputes the meal's display score on the fly and returns the values the
+// client needs to update the bar in place (no full feed reload).
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/:id/rate', isAuthenticated, async (req, res) => {
+  try {
+    const score = Math.round(Number(req.body?.score));
+    if (!Number.isFinite(score) || score < 0 || score > 100) {
+      return res.status(400).json({ error: 'score must be 0–100' });
+    }
+    const meal = await Meal.findOne({ _id: req.params.id, isPublic: true }).lean();
+    if (!meal) return res.status(404).json({ error: 'meal not found' });
+
+    await Rating.findOneAndUpdate(
+      { meal: meal._id, user: req.user._id },
+      { score, updatedAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+
+    // Recompute aggregates for this meal so the client gets fresh display values.
+    const [agg] = await Rating.aggregate([
+      { $match: { meal: meal._id } },
+      { $group: { _id: '$meal', sum: { $sum: '$score' }, count: { $sum: 1 } } },
+    ]);
+    const algo = calcHealthScore(meal);
+    const ratingSum   = agg?.sum   || 0;
+    const ratingCount = agg?.count || 0;
+
+    res.json({
+      myRating:     score,
+      ratingCount,
+      userAvgScore: ratingCount > 0 ? Math.round(ratingSum / ratingCount) : null,
+      displayScore: algo == null ? null : Math.round((algo + ratingSum) / (1 + ratingCount)),
+    });
+  } catch (err) {
+    console.error('Rating upsert error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.delete('/:id/rate', isAuthenticated, async (req, res) => {
+  try {
+    await Rating.deleteOne({ meal: req.params.id, user: req.user._id });
+    res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
