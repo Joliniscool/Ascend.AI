@@ -12,11 +12,21 @@ async function init() {
 function showLogin() {
   document.getElementById('login-page').style.display = 'flex';
   document.getElementById('dashboard').style.display = 'none';
+  // Hide chat UI so it doesn't linger on the login screen
+  const chatBtn   = document.querySelector('.chat-bubble');
+  const chatPanel = document.getElementById('chat-panel');
+  const chatNotif = document.getElementById('chud-notif');
+  if (chatBtn)   chatBtn.style.display   = 'none';
+  if (chatPanel) chatPanel.style.display = 'none';
+  if (chatNotif) chatNotif.classList.remove('show');
 }
 
 function showDashboard(user) {
   document.getElementById('login-page').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
+  // Restore chat UI
+  const chatBtn = document.querySelector('.chat-bubble');
+  if (chatBtn) chatBtn.style.display = 'flex';
   document.getElementById('user-name-display').textContent = user.name || user.email;
   document.getElementById('welcome-msg').textContent = `Welcome back, ${user.name?.split(' ')[0] || 'friend'}! 🌸`;
   document.getElementById('avatar-initial').textContent = (user.name || user.email || '?')[0].toUpperCase();
