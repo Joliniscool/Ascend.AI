@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ascend.AI — Log Meal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./log-meal.css" />
+</head>
+<body>
+
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+
+  <div id="page" style="display:none">
+    <div class="topbar">
+      <div class="topbar-logo">
+        <span class="topbar-platy">
+          <svg width="26" height="26" viewBox="0 0 140 140" fill="none">
+            <ellipse cx="70" cy="86" rx="42" ry="31" fill="#ff7c4a"/>
+            <ellipse cx="70" cy="91" rx="26" ry="19" fill="#ffb89e"/>
+            <ellipse cx="70" cy="54" rx="28" ry="26" fill="#ff7c4a"/>
+            <ellipse cx="95" cy="60" rx="19" ry="9" fill="#ff4d8f"/>
+            <circle cx="80" cy="49" r="7" fill="white"/>
+            <circle cx="80" cy="49" r="4" fill="#1a0a0a"/>
+            <circle cx="82" cy="47" r="1.5" fill="white"/>
+            <ellipse cx="54" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(-8 54 116)"/>
+            <ellipse cx="86" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(8 86 116)"/>
+          </svg>
+        </span>
+        Ascend.AI
+      </div>
+      <nav class="topbar-nav">
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/meals.html" class="nav-link">Meals</a>
+        <a href="/feed.html" class="nav-link">Feed</a>
+      </nav>
+      <div class="user-info">
+        <div class="avatar-placeholder" id="avatar-initial">?</div>
+        <span class="user-name" id="user-name-display"></span>
+        <button class="logout-btn" onclick="logout()">Sign out</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">📷 Log a Meal</h1>
+          <p class="page-subtitle">Snap a photo and let AI analyze it for you</p>
+        </div>
+        <a href="/" class="outline-btn" style="margin-top:0; text-decoration:none;">← Dashboard</a>
+      </div>
+
+      <!-- STATE 1: UPLOAD -->
+      <div class="card" id="upload-state">
+        <div class="section-title">Step 1 — Upload Photo</div>
+        <div class="photo-area">
+          <input type="file" id="food-image" accept="image/*" style="display:none" onchange="onPhotoSelected(this)" />
+          <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(this)" />
+          <div class="drop-zone" id="drop-zone" onclick="document.getElementById('food-image').click()">
+            <div class="drop-zone-placeholder" id="drop-placeholder">
+              <span>📷</span>
+              <p>Click or drag photo here</p>
+              <span class="drop-hint">JPG, PNG, HEIC up to 5MB</span>
+            </div>
+            <img id="image-preview" alt="food preview" />
+            <button class="remove-photo-btn" id="remove-photo" onclick="removePhoto(event)">✕</button>
+          </div>
+          <button class="outline-btn camera-btn" onclick="document.getElementById('camera-input').click()">📸 Take Photo</button>
+        </div>
+        <button class="save-btn" id="analyze-btn" onclick="startAnalyze()" disabled style="margin-top:1.5rem; width:100%">
+          🔍 Analyze with AI
+        </button>
+      </div>
+
+      <!-- STATE 2: ANALYZING -->
+      <div class="card" id="analyzing-state" style="display:none">
+        <div class="analyzing-content">
+          <div class="spinner"></div>
+          <h3 style="font-family:'Nunito',sans-serif; font-weight:800; margin-bottom:0.5rem">AI is analyzing your meal…</h3>
+          <p style="color:var(--muted); margin-bottom:1rem">This usually takes 3–10s. First request after a long pause can take up to 60s — hold tight!</p>
+          <div class="analyzing-elapsed">Elapsed: <span id="elapsed-time">0</span>s</div>
+        </div>
+      </div>
+
+      <!-- STATE 3: REVIEW -->
+      <div id="review-state" style="display:none">
+        <div class="card">
+          <div class="section-title">Step 2 — Review & Confirm</div>
+
+          <div class="review-photo-row">
+            <img id="review-image" alt="meal photo" />
+            <div style="flex:1; display:flex; flex-direction:column; gap:0.75rem">
+              <div class="field" style="margin-top:0">
+                <label>Meal Name</label>
+                <input type="text" id="meal-name-input" placeholder="e.g. Chicken Bowl" />
+              </div>
+              <div class="field" style="margin-top:0">
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer">
+                  <input type="checkbox" id="is-public-input" checked />
+                  <span>Share to community feed</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="detected-items" id="detected-items"></div>
+
+          <div class="totals-bar">
+            <div class="totals-label">🌟 Total</div>
+            <div class="totals-macros">
+              <span class="macro">🔥 <strong id="total-cals">0</strong> kcal</span>
+              <span class="macro">💪 <strong id="total-protein">0</strong>g protein</span>
+              <span class="macro">🌾 <strong id="total-carbs">0</strong>g carbs</span>
+              <span class="macro">🧈 <strong id="total-fat">0</strong>g fat</span>
+            </div>
+          </div>
+
+          <div class="review-actions">
+            <button class="outline-btn" onclick="resetToUpload()">↺ Start Over</button>
+            <button class="save-btn" id="save-btn" onclick="saveMeal()">💾 Save Meal</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATE 4: NO ITEMS DETECTED -->
+      <div class="card" id="empty-state" style="display:none">
+        <div class="analyzing-content">
+          <div style="font-size:3rem; margin-bottom:1rem">🤔</div>
+          <h3 style="font-family:'Nunito',sans-serif; font-weight:800; margin-bottom:0.5rem">Couldn't detect any food</h3>
+          <p style="color:var(--muted); margin-bottom:1.5rem">Try a clearer photo with the food in better light, or use manual entry on the dashboard.</p>
+          <button class="save-btn" onclick="resetToUpload()">↺ Try Again</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="./log-meal.js"></script>
+</body>
+</html>
