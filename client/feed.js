@@ -10,6 +10,7 @@ async function init() {
     document.getElementById('user-name-display').textContent = data.user.name || data.user.email;
     document.getElementById('avatar-initial').textContent = (data.user.name || data.user.email || '?')[0].toUpperCase();
     document.getElementById('page').style.display = 'block';
+    loadProfile();
     loadFeed();
     loadProfile();
   } catch { window.location.href = '/'; }
@@ -32,20 +33,29 @@ function renderFeed(meals) {
     list.innerHTML = '<div class="meals-empty">No meals in the feed yet. Be the first! 🌸</div>';
     return;
   }
+  const fmt = window.NUTRITION?.fmt1 || (n => String(n));
+  const highlights = window.NUTRITION?.mealHighlights;
   list.innerHTML = meals.map(meal => {
     const user = meal.user || {};
+    const hl = highlights ? highlights(meal) : { highProtein: false, highMicros: [] };
     const imageHtml = meal.imageUrl
       ? `<img src="${meal.imageUrl}" class="feed-meal-img" alt="${meal.name}" />`
       : '';
     const macros = [
-      meal.calories ? `<span class="macro">🔥 ${meal.calories} kcal</span>` : '',
-      meal.protein  ? `<span class="macro">💪 ${meal.protein}g protein</span>` : '',
-      meal.carbs    ? `<span class="macro">🌾 ${meal.carbs}g carbs</span>` : '',
-      meal.fat      ? `<span class="macro">🧈 ${meal.fat}g fat</span>` : '',
+      meal.calories ? `<span class="macro">🔥 ${fmt(meal.calories)} kcal</span>` : '',
+      meal.protein  ? `<span class="macro" ${hl.highProtein ? 'style="color:#86efac;font-weight:800"' : ''}>💪 ${fmt(meal.protein)}g protein</span>` : '',
+      meal.carbs    ? `<span class="macro">🌾 ${fmt(meal.carbs)}g carbs</span>` : '',
+      meal.fat      ? `<span class="macro">🧈 ${fmt(meal.fat)}g fat</span>` : '',
     ].filter(Boolean).join('');
+    const chipsHtml = (hl.highProtein || hl.highMicros.length)
+      ? `<div class="meal-highlight-chips">
+           ${hl.highProtein ? `<span class="meal-highlight-chip protein">💪 High protein</span>` : ''}
+           ${hl.highMicros.map(h => `<span class="meal-highlight-chip">High ${h.label}</span>`).join('')}
+         </div>`
+      : '';
 
     return `
-      <div class="feed-card" id="card-${meal._id}">
+      <div class="feed-card ${hl.highProtein ? 'meal-card-highlight-protein' : ''}" id="card-${meal._id}">
         <div class="feed-user-row">
           ${userAvatarHtml(user)}
           <div class="feed-user-info">
@@ -56,6 +66,7 @@ function renderFeed(meals) {
         ${imageHtml}
         <div class="feed-meal-name">${meal.name}</div>
         ${macros ? `<div class="meal-macros" style="margin-top:0.5rem">${macros}</div>` : ''}
+        ${chipsHtml}
         ${ascensionBarHtml(meal)}
         <div class="feed-card-footer">
           <button class="comment-toggle-btn" onclick="toggleComments('${meal._id}')">
@@ -252,6 +263,9 @@ const CATEGORY_HEALTH = {
 };
 
 function calcHealthScore(meal) {
+  if (typeof meal.healthScore === 'number') {
+    return Math.max(5, Math.min(95, Math.round(meal.healthScore)));
+  }
   const { calories, protein = 0, fat = 0 } = meal;
   if (!calories) return null;
 

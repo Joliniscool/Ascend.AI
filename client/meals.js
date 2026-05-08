@@ -9,6 +9,7 @@ async function init() {
     document.getElementById('user-name-display').textContent = data.user.name || data.user.email;
     document.getElementById('avatar-initial').textContent = (data.user.name || data.user.email || '?')[0].toUpperCase();
     document.getElementById('page').style.display = 'block';
+    loadProfile();
     loadMeals();
     loadProfile();
   } catch { window.location.href = '/'; }
@@ -27,9 +28,20 @@ async function loadMeals() {
 
 function filterMeals() {
   const query = document.getElementById('search-input').value.toLowerCase();
-  const sort = document.getElementById('sort-select').value;
+  const sort  = document.getElementById('sort-select').value;
+  const range = document.getElementById('range-select')?.value || 'all';
+
+  const now = Date.now();
+  const startOfDay = new Date(); startOfDay.setHours(0, 0, 0, 0);
+  const cutoffs = {
+    today: startOfDay.getTime(),
+    week:  now - 7 * 86400000,
+    month: now - 30 * 86400000,
+  };
+  const cutoff = cutoffs[range];
 
   let meals = allMeals.filter(m => m.name.toLowerCase().includes(query));
+  if (cutoff != null) meals = meals.filter(m => new Date(m.loggedAt).getTime() >= cutoff);
 
   if (sort === 'newest') meals.sort((a, b) => new Date(b.loggedAt) - new Date(a.loggedAt));
   else if (sort === 'oldest') meals.sort((a, b) => new Date(a.loggedAt) - new Date(b.loggedAt));
@@ -37,7 +49,7 @@ function filterMeals() {
   else if (sort === 'calories-low') meals.sort((a, b) => (a.calories || 0) - (b.calories || 0));
 
   renderMeals(meals);
-  renderSummary(meals);
+  renderSummary(meals, range);
 }
 
 function renderMeals(meals) {
@@ -46,19 +58,30 @@ function renderMeals(meals) {
     grid.innerHTML = '<div class="meals-empty">No meals found. 🌸</div>';
     return;
   }
-  grid.innerHTML = meals.map(meal => `
-    <div class="meal-card-full">
+  const fmt = window.NUTRITION?.fmt1 || (n => String(n));
+  const highlights = window.NUTRITION?.mealHighlights;
+  grid.innerHTML = meals.map(meal => {
+    const hl = highlights ? highlights(meal) : { highProtein: false, highMicros: [] };
+    const chipsHtml = (hl.highProtein || hl.highMicros.length)
+      ? `<div class="meal-highlight-chips">
+           ${hl.highProtein ? `<span class="meal-highlight-chip protein">💪 High protein</span>` : ''}
+           ${hl.highMicros.map(h => `<span class="meal-highlight-chip">High ${h.label}</span>`).join('')}
+         </div>`
+      : '';
+    return `
+    <div class="meal-card-full ${hl.highProtein ? 'meal-card-highlight-protein' : ''}">
       ${meal.imageUrl
         ? `<img class="meal-img-lg" src="${meal.imageUrl}" alt="${meal.name}">`
         : `<div class="meal-img-lg meal-img-placeholder" style="font-size:2rem">🍽️</div>`}
       <div class="meal-info">
         <div class="meal-name-text">${meal.name}</div>
         <div class="meal-macros" style="margin-top:0.4rem">
-          ${meal.calories ? `<span class="macro">🔥 ${meal.calories} kcal</span>` : ''}
-          ${meal.protein  ? `<span class="macro">💪 ${meal.protein}g protein</span>` : ''}
-          ${meal.carbs    ? `<span class="macro">🌾 ${meal.carbs}g carbs</span>` : ''}
-          ${meal.fat      ? `<span class="macro">🧈 ${meal.fat}g fat</span>` : ''}
+          ${meal.calories ? `<span class="macro">🔥 ${fmt(meal.calories)} kcal</span>` : ''}
+          ${meal.protein  ? `<span class="macro" ${hl.highProtein ? 'style="color:#86efac;font-weight:800"' : ''}>💪 ${fmt(meal.protein)}g protein</span>` : ''}
+          ${meal.carbs    ? `<span class="macro">🌾 ${fmt(meal.carbs)}g carbs</span>` : ''}
+          ${meal.fat      ? `<span class="macro">🧈 ${fmt(meal.fat)}g fat</span>` : ''}
         </div>
+        ${chipsHtml}
         <div class="meal-date" style="margin-top:0.4rem">
           ${new Date(meal.loggedAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
         </div>
@@ -68,7 +91,8 @@ function renderMeals(meals) {
         <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 async function deleteMeal(id) {
@@ -80,14 +104,22 @@ async function deleteMeal(id) {
   } catch { showToast('Could not delete meal ❌'); }
 }
 
-function renderSummary(meals) {
+function renderSummary(meals, range = 'all') {
   const bar = document.getElementById('summary-bar');
   if (!meals.length) { bar.style.display = 'none'; return; }
-  const totalCals = meals.reduce((sum, m) => sum + (m.calories || 0), 0);
-  const totalProtein = meals.reduce((sum, m) => sum + (m.protein || 0), 0);
-  document.getElementById('summary-count').textContent = `${meals.length} meal${meals.length !== 1 ? 's' : ''}`;
-  document.getElementById('summary-cals').textContent = `🔥 ${totalCals} kcal total`;
-  document.getElementById('summary-protein').textContent = `💪 ${totalProtein}g protein total`;
+  const fmt = window.NUTRITION?.fmt1 || (n => String(n));
+  const totalCals    = meals.reduce((sum, m) => sum + (m.calories || 0), 0);
+  const totalProtein = meals.reduce((sum, m) => sum + (m.protein  || 0), 0);
+  const scopeLabel = {
+    all:   'All time',
+    today: 'Today',
+    week:  'Last 7 days',
+    month: 'Last 30 days',
+  }[range] || 'All time';
+  document.getElementById('summary-scope').textContent   = `${scopeLabel} ·`;
+  document.getElementById('summary-count').textContent   = `${meals.length} meal${meals.length !== 1 ? 's' : ''}`;
+  document.getElementById('summary-cals').textContent    = `🔥 ${fmt(totalCals)} kcal`;
+  document.getElementById('summary-protein').textContent = `💪 ${fmt(totalProtein)}g protein`;
   bar.style.display = 'flex';
 }
 

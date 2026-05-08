@@ -24,9 +24,31 @@ model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
 processor = AutoProcessor.from_pretrained(MODEL_NAME)
 print("Model loaded. Server ready.")
 
-PROMPT = """Analyze this food photo. List each food item you see and estimate its weight in grams.
-Return ONLY valid JSON in this exact format, with no other text:
-{"items": [{"food": "name of food", "grams": number}]}"""
+PROMPT = """You are analyzing a food photo for a nutrition app.
+
+Step 1 — List every distinct food item you see, with an estimated weight in grams.
+Step 2 — Rate the WHOLE MEAL on a 0–100 healthiness scale and write a one-sentence reason.
+
+Use this scale (be opinionated, do NOT cluster everything in the middle):
+  0–20  : deep-fried fast food, sugary drinks, candy, pastries, processed snacks (McDonald's, donuts, soda, chips)
+  21–40 : heavily processed / fried / sugary meals, refined carbs with little protein or veg (fried rice alone, mac & cheese, sweet cereal)
+  41–60 : mixed meals — some whole foods but with refined carbs, fatty meat, or heavy sauces (burger + fries done at home, pasta with cream sauce)
+  61–80 : balanced whole-food meals — lean protein + whole grains + vegetables, light cooking oils (chicken stir-fry with rice and veg, salmon with quinoa, burrito bowl)
+  81–100: very nutrient-dense whole-food meals — lots of vegetables/legumes, lean protein, minimal processing, no refined sugar (grilled fish + greens + sweet potato, lentil-veg bowl)
+
+Anchor examples:
+  McDonald's Big Mac + fries + Coke -> ~12
+  Slice of pepperoni pizza + soda  -> ~28
+  Beef stir-fry with rice and carrots, light oil -> ~70
+  Grilled chicken breast + brown rice + broccoli -> ~85
+  Big bowl of mixed greens, lentils, salmon, olive oil -> ~92
+
+Return ONLY valid JSON in EXACTLY this format, with no other text:
+{
+  "items": [{"food": "name of food", "grams": number}],
+  "healthScore": number,
+  "healthReasoning": "one short sentence"
+}"""
 
 
 # ============================================================
@@ -98,5 +120,13 @@ async def analyze(image: UploadFile = File(...)):
 
     if "items" not in parsed or not isinstance(parsed["items"], list):
         return {"items": [], "error": "Missing 'items' array", "raw_output": raw_text}
+
+    score = parsed.get("healthScore")
+    if isinstance(score, (int, float)):
+        parsed["healthScore"] = max(0, min(100, int(round(score))))
+    else:
+        parsed["healthScore"] = None
+    if not isinstance(parsed.get("healthReasoning"), str):
+        parsed["healthReasoning"] = None
 
     return parsed

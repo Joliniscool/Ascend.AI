@@ -82,6 +82,31 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
+// Separate in-memory multer for /analyze — reads file to RAM first, then we
+// explicitly upload to Cloudinary AND forward to Modal in parallel. Avoids
+// multer holding the connection open during Cloudinary streaming.
+const memoryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+
+function uploadBufferToCloudinary(buffer, mimetype) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: 'ascend-ai/meals',
+        resource_type: 'image',
+        transformation: [{ width: 800, crop: 'limit', quality: 'auto' }],
+      },
+      (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+}
+
 router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
   try {
     const { name, calories, protein, carbs, fat, isPublic } = req.body;
@@ -99,21 +124,30 @@ router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
   }
 });
 
-router.post('/analyze', isAuthenticated, upload.single('image'), async (req, res) => {
+router.post('/analyze', isAuthenticated, memoryUpload.single('image'), async (req, res) => {
+  const t0 = Date.now();
+  const log = (msg) => console.log(`[analyze +${((Date.now() - t0) / 1000).toFixed(1)}s] ${msg}`);
   try {
-    if (!req.file) return res.status(400).json({ error: 'Image required' });
-    const imageUrl = req.file.path;
-
-    const imgResp = await fetch(imageUrl);
-    if (!imgResp.ok) throw new Error(`Failed to fetch uploaded image (${imgResp.status})`);
-    const imgBlob = await imgResp.blob();
+    log('start');
+    if (!req.file?.buffer) return res.status(400).json({ error: 'Image required' });
+    log(`multer (memory) done — buffer ${req.file.buffer.length} bytes, type=${req.file.mimetype}`);
 
     const mlForm = new FormData();
-    mlForm.append('image', imgBlob, 'meal.jpg');
+    const mlBlob = new Blob([req.file.buffer], { type: req.file.mimetype || 'image/jpeg' });
+    mlForm.append('image', mlBlob, 'meal.jpg');
 
-    const mlResp = await fetch(ML_SERVICE_URL, { method: 'POST', body: mlForm });
+    log('starting parallel Cloudinary upload + Modal POST');
+    const [cloudinaryResult, mlResp] = await Promise.all([
+      uploadBufferToCloudinary(req.file.buffer, req.file.mimetype),
+      fetch(ML_SERVICE_URL, { method: 'POST', body: mlForm }),
+    ]);
+    log(`Cloudinary: ${cloudinaryResult.secure_url}`);
+    log(`Modal status: ${mlResp.status}`);
+
+    const imageUrl = cloudinaryResult.secure_url;
     if (!mlResp.ok) throw new Error(`ML service returned ${mlResp.status}`);
     const mlData = await mlResp.json();
+    log(`ML returned ${mlData.items?.length ?? 0} items`);
 
     if (mlData.error) {
       return res.status(502).json({ error: 'ML service error', detail: mlData.error, imageUrl });
@@ -127,8 +161,16 @@ router.post('/analyze', isAuthenticated, upload.single('image'), async (req, res
       candidates: await searchFoodCandidates(it.food, 5),
     })));
 
-    res.json({ imageUrl, suggestedName: suggestMealName(items), items });
+    log(`done — sending response (healthScore=${mlData.healthScore})`);
+    res.json({
+      imageUrl,
+      suggestedName: suggestMealName(items),
+      items,
+      healthScore: mlData.healthScore ?? null,
+      healthReasoning: mlData.healthReasoning ?? null,
+    });
   } catch (err) {
+    log(`ERROR after ${((Date.now() - t0) / 1000).toFixed(1)}s: ${err.message}`);
     console.error('Meal analyze error:', err);
     res.status(500).json({ error: err.message });
   }
@@ -136,7 +178,7 @@ router.post('/analyze', isAuthenticated, upload.single('image'), async (req, res
 
 router.post('/confirm', isAuthenticated, async (req, res) => {
   try {
-    const { name, imageUrl, items, isPublic } = req.body;
+    const { name, imageUrl, items, isPublic, healthScore, healthReasoning } = req.body;
     if (!name || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'name and items required' });
     }
@@ -145,53 +187,70 @@ router.post('/confirm', isAuthenticated, async (req, res) => {
     const foods = await Food.find({ fdcId: { $in: fdcIds } }).lean();
     const foodMap = new Map(foods.map(f => [f.fdcId, f]));
 
-    let totalCalories = 0, totalProtein = 0, totalCarbs = 0, totalFat = 0;
+    const MICRO_KEYS = [
+      'fiber', 'sugar', 'saturatedFat', 'cholesterol',
+      'sodium', 'potassium', 'calcium', 'iron', 'magnesium', 'zinc',
+      'vitaminA', 'vitaminC', 'vitaminD', 'vitaminB12', 'folate',
+    ];
+    const round1 = (n) => Math.round(n * 10) / 10;
+
+    const totals = { calories: 0, protein: 0, carbs: 0, fat: 0 };
+    for (const k of MICRO_KEYS) totals[k] = 0;
+
     const mealItems = items.map(i => {
       const food = foodMap.get(Number(i.fdcId));
       if (!food) return null;
-      const grams = Number(i.grams) || 0;
+      const grams  = Number(i.grams) || 0;
       const factor = grams / 100;
       const itemCals = (food.per100g.calories || 0) * factor;
       const itemProt = (food.per100g.protein  || 0) * factor;
       const itemCarb = (food.per100g.carbs    || 0) * factor;
       const itemFat  = (food.per100g.fat      || 0) * factor;
-      totalCalories += itemCals;
-      totalProtein  += itemProt;
-      totalCarbs    += itemCarb;
-      totalFat      += itemFat;
-      return {
+      totals.calories += itemCals;
+      totals.protein  += itemProt;
+      totals.carbs    += itemCarb;
+      totals.fat      += itemFat;
+
+      const item = {
         fdcId: food.fdcId,
         name: food.shortName || food.name,
         category: food.category,
         grams,
         calories: Math.round(itemCals),
-        protein:  Math.round(itemProt * 10) / 10,
-        carbs:    Math.round(itemCarb * 10) / 10,
-        fat:      Math.round(itemFat  * 10) / 10,
-        sugar:        Math.round((food.per100g.sugar        || 0) * factor * 10) / 10,
-        saturatedFat: Math.round((food.per100g.saturatedFat || 0) * factor * 10) / 10,
-        sodium:       Math.round((food.per100g.sodium       || 0) * factor),
-        fiber:        Math.round((food.per100g.fiber        || 0) * factor * 10) / 10,
+        protein:  round1(itemProt),
+        carbs:    round1(itemCarb),
+        fat:      round1(itemFat),
       };
+      for (const k of MICRO_KEYS) {
+        const v = (food.per100g[k] || 0) * factor;
+        totals[k] += v;
+        item[k] = round1(v);
+      }
+      return item;
     }).filter(Boolean);
 
     if (mealItems.length === 0) {
       return res.status(400).json({ error: 'No valid foods found for given fdcIds' });
     }
 
-    const meal = await Meal.create({
+    const mealDoc = {
       user:        req.user._id,
       name,
       imageUrl:    imageUrl || null,
-      calories:    Math.round(totalCalories),
-      protein:     Math.round(totalProtein * 10) / 10,
-      carbs:       Math.round(totalCarbs   * 10) / 10,
-      fat:         Math.round(totalFat     * 10) / 10,
+      calories:    Math.round(totals.calories),
+      protein:     round1(totals.protein),
+      carbs:       round1(totals.carbs),
+      fat:         round1(totals.fat),
       aiEstimated: true,
       userEdited:  true,
       isPublic:    isPublic !== false,
       items:       mealItems,
-    });
+      healthScore:     (typeof healthScore === 'number' && healthScore >= 0 && healthScore <= 100)
+                         ? Math.round(healthScore) : undefined,
+      healthReasoning: typeof healthReasoning === 'string' ? healthReasoning : undefined,
+    };
+    for (const k of MICRO_KEYS) mealDoc[k] = round1(totals[k]);
+    const meal = await Meal.create(mealDoc);
 
     await updateStreak(req.user._id);
     res.status(201).json(meal);

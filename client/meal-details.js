@@ -42,15 +42,46 @@ function openMealDetails(meal) {
     : '';
 
   const totalsEl = document.getElementById('meal-details-totals');
+  const fmt = window.NUTRITION?.fmt1 || (n => String(n));
   const macroBits = [
-    meal.calories ? `🔥 <strong>${meal.calories}</strong> kcal` : '',
-    meal.protein  ? `💪 <strong>${meal.protein}</strong>g protein` : '',
-    meal.carbs    ? `🌾 <strong>${meal.carbs}</strong>g carbs` : '',
-    meal.fat      ? `🧈 <strong>${meal.fat}</strong>g fat` : '',
+    meal.calories ? `🔥 <strong>${fmt(meal.calories)}</strong> kcal` : '',
+    meal.protein  ? `💪 <strong>${fmt(meal.protein)}</strong>g protein` : '',
+    meal.carbs    ? `🌾 <strong>${fmt(meal.carbs)}</strong>g carbs` : '',
+    meal.fat      ? `🧈 <strong>${fmt(meal.fat)}</strong>g fat` : '',
   ].filter(Boolean);
   totalsEl.innerHTML = macroBits.length
     ? `<div class="meal-details-macros-row">${macroBits.map(b => `<span>${b}</span>`).join('')}</div>`
     : '';
+
+  // Micronutrient grid with %DV — collapsible
+  if (window.NUTRITION) {
+    const { DV, DASHBOARD_MICROS, dvPct } = window.NUTRITION;
+    const microBits = DASHBOARD_MICROS.map(m => {
+      const amount = meal[m.key];
+      if (!amount) return '';
+      const pct = dvPct(m.key, amount);
+      const isLimit = DV[m.key]?.limit;
+      const isHigh = !isLimit && pct >= 30;
+      return `
+        <div class="meal-detail-micro ${isHigh ? 'high' : ''} ${isLimit ? 'limit' : ''}">
+          <div class="meal-detail-micro-row1">
+            <span>${m.icon} ${m.label}</span>
+            <span class="pct">${pct}% DV</span>
+          </div>
+          <div class="meal-detail-micro-row2">${fmt(amount)}${DV[m.key]?.unit || ''}</div>
+        </div>
+      `;
+    }).filter(Boolean).join('');
+    if (microBits) {
+      totalsEl.innerHTML += `
+        <button class="micros-toggle" onclick="toggleDetailMicros(this)" type="button">
+          <span>🧪 Micronutrient Breakdown</span>
+          <span class="micros-toggle-chevron">▾</span>
+        </button>
+        <div class="meal-details-micros" style="display:none">${microBits}</div>
+      `;
+    }
+  }
 
   const items = Array.isArray(meal.items) ? meal.items : [];
   const itemsContainer = document.getElementById('meal-details-items');
@@ -73,13 +104,13 @@ function openMealDetails(meal) {
           <li class="meal-details-ingredient">
             <div class="ingredient-row-1">
               <span class="ingredient-name">${escMd(i.name || '?')}</span>
-              <span class="ingredient-grams">${i.grams ?? 0}g</span>
+              <span class="ingredient-grams">${fmt(i.grams ?? 0)}g</span>
             </div>
             <div class="ingredient-row-2">
-              ${i.calories ? `<span>🔥 ${i.calories} kcal</span>` : ''}
-              ${i.protein  ? `<span>💪 ${i.protein}g</span>` : ''}
-              ${i.carbs    ? `<span>🌾 ${i.carbs}g</span>` : ''}
-              ${i.fat      ? `<span>🧈 ${i.fat}g</span>` : ''}
+              ${i.calories ? `<span>🔥 ${fmt(i.calories)} kcal</span>` : ''}
+              ${i.protein  ? `<span>💪 ${fmt(i.protein)}g</span>` : ''}
+              ${i.carbs    ? `<span>🌾 ${fmt(i.carbs)}g</span>` : ''}
+              ${i.fat      ? `<span>🧈 ${fmt(i.fat)}g</span>` : ''}
             </div>
           </li>
         `).join('')}
@@ -93,6 +124,14 @@ function openMealDetails(meal) {
 function closeMealDetails() {
   const modal = document.getElementById('meal-details-modal');
   if (modal) modal.style.display = 'none';
+}
+
+function toggleDetailMicros(btn) {
+  const grid = btn.nextElementSibling;
+  const chevron = btn.querySelector('.micros-toggle-chevron');
+  const isOpen = grid.style.display !== 'none';
+  grid.style.display = isOpen ? 'none' : 'grid';
+  if (chevron) chevron.textContent = isOpen ? '▾' : '▴';
 }
 
 function escMd(s) {

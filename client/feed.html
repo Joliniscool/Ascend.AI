@@ -41,7 +41,7 @@
       <div class="user-info" id="user-info-wrap" style="position:relative">
         <button class="user-trigger" onclick="toggleProfileDropdown()">
           <div class="avatar-placeholder" id="avatar-initial">?</div>
-          <span class="user-name" id="user-name-display"></span>
+          <span class="user-name" id="user-name-display">Loading...</span>
           <span class="dropdown-chevron" id="profile-chevron">▾</span>
         </button>
         <button class="logout-btn" onclick="logout()">Sign out</button>
@@ -116,6 +116,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <script src="./nutrition.js"></script>
   <script src="./profile-dropdown.js"></script>
   <script src="./feed.js"></script>
 </body>

@@ -142,9 +142,26 @@
 .review-actions {
   display: flex;
   gap: 1rem;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 1.5rem;
   flex-wrap: wrap;
+}
+.review-actions .outline-btn {
+  margin-top: 0;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.85rem;
+}
+.review-actions .save-btn {
+  margin-top: 0;
+  flex: 1 1 240px;
+  max-width: 320px;
+  min-width: 220px;
+}
+@media (max-width: 480px) {
+  .review-actions { justify-content: stretch; }
+  .review-actions .outline-btn { flex: 1; }
+  .review-actions .save-btn { max-width: none; }
 }
 
 .review-photo-row {

@@ -59,14 +59,53 @@ async function loadStats() {
   try {
     const res = await fetch(`${API}/api/users/stats`, { credentials: 'include' });
     const data = await res.json();
-    document.getElementById('stat-calories').textContent = data.todaysCalories ?? '0';
-    document.getElementById('stat-goal').textContent = data.dailyCalorieGoal ?? '—';
+    renderNutritionPanel(data);
     document.getElementById('stat-streak').textContent = data.currentStreak ?? '0';
     document.getElementById('stat-meals').textContent = data.totalMeals ?? '0';
     document.getElementById('stat-weight').textContent = data.currentWeight ?? '—';
   } catch {}
 }
 
+function renderNutritionPanel(data) {
+  const { fmt1, fmtPct, macroPctOfCalories } = window.NUTRITION;
+  const tCal = data.todaysCalories || 0;
+  const tP   = data.todaysProtein  || 0;
+  const tC   = data.todaysCarbs    || 0;
+  const tF   = data.todaysFat      || 0;
+  const goal = data.dailyCalorieGoal || 0;
+  const split = data.macroSplit || { protein: 30, carbs: 45, fat: 25 };
+
+  document.getElementById('stat-calories').textContent = fmt1(tCal);
+  document.getElementById('stat-goal').textContent = goal || '—';
+  document.getElementById('stat-cal-pct').textContent = goal ? `${fmtPct(tCal, goal)}% of goal` : '';
+
+  const todayPcts = macroPctOfCalories(tP, tC, tF);
+  const macros = [
+    { key: 'protein', label: 'Protein', goal: data.dailyProteinGoal, today: tP, pctToday: todayPcts.protein, pctGoal: split.protein, color: '#ff4d8f', unit: 'g' },
+    { key: 'carbs',   label: 'Carbs',   goal: data.dailyCarbsGoal,   today: tC, pctToday: todayPcts.carbs,   pctGoal: split.carbs,   color: '#a78bfa', unit: 'g' },
+    { key: 'fat',     label: 'Fat',     goal: data.dailyFatGoal,     today: tF, pctToday: todayPcts.fat,     pctGoal: split.fat,     color: '#fbbf24', unit: 'g' },
+  ];
+  document.getElementById('macro-bars-col').innerHTML = macros.map(m => {
+    const fillPct = m.goal ? Math.min(100, Math.round((m.today / m.goal) * 100)) : 0;
+    return `
+      <div class="macro-bar-row">
+        <div class="macro-bar-label" style="color:${m.color}">${m.label}<br><span style="color:var(--muted); font-size:0.7rem; font-weight:600">${m.pctToday}% of cals</span></div>
+        <div class="macro-bar-track"><div class="macro-bar-fill" style="width:${fillPct}%; background:${m.color}"></div></div>
+        <div class="macro-bar-meta"><strong>${fmt1(m.today)}${m.unit}</strong> / ${m.goal || '—'}${m.unit}<br><span style="font-size:0.7rem">goal: ${m.pctGoal}%</span></div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('micros-grid').innerHTML = window.NUTRITION.microCellsHtml(data.todaysMicros || {});
+}
+
+function toggleMicros() {
+  const grid = document.getElementById('micros-grid');
+  const chevron = document.getElementById('micros-toggle-chevron');
+  const isOpen = grid.style.display !== 'none';
+  grid.style.display = isOpen ? 'none' : 'grid';
+  if (chevron) chevron.textContent = isOpen ? '▾' : '▴';
+}
 
 async function logout() {
   await fetch(`${API}/auth/logout`, { credentials: 'include' });
@@ -150,19 +189,30 @@ async function loadMeals() {
       grid.innerHTML = '<div class="meals-empty">No meals logged yet — add your first one above! 🌸</div>';
       return;
     }
-    grid.innerHTML = meals.slice(0, 5).map(meal => `
-      <div class="meal-card">
+    const fmt = window.NUTRITION?.fmt1 || (n => String(n));
+    const highlights = window.NUTRITION?.mealHighlights;
+    grid.innerHTML = meals.slice(0, 5).map(meal => {
+      const hl = highlights ? highlights(meal) : { highProtein: false, highMicros: [] };
+      const chipsHtml = (hl.highProtein || hl.highMicros.length)
+        ? `<div class="meal-highlight-chips">
+             ${hl.highProtein ? `<span class="meal-highlight-chip protein">💪 High protein</span>` : ''}
+             ${hl.highMicros.map(h => `<span class="meal-highlight-chip">High ${h.label}</span>`).join('')}
+           </div>`
+        : '';
+      return `
+      <div class="meal-card ${hl.highProtein ? 'meal-card-highlight-protein' : ''}">
         ${meal.imageUrl
           ? `<img class="meal-img" src="${meal.imageUrl}" alt="${meal.name}">`
           : `<div class="meal-img-placeholder">🍽️</div>`}
         <div class="meal-info">
           <div class="meal-name-text">${meal.name}</div>
           <div class="meal-macros">
-            ${meal.calories ? `<span class="macro">🔥 ${meal.calories} kcal</span>` : ''}
-            ${meal.protein  ? `<span class="macro">💪 ${meal.protein}g protein</span>` : ''}
-            ${meal.carbs    ? `<span class="macro">🌾 ${meal.carbs}g carbs</span>` : ''}
-            ${meal.fat      ? `<span class="macro">🧈 ${meal.fat}g fat</span>` : ''}
+            ${meal.calories ? `<span class="macro">🔥 ${fmt(meal.calories)} kcal</span>` : ''}
+            ${meal.protein  ? `<span class="macro" ${hl.highProtein ? 'style="color:#86efac;font-weight:800"' : ''}>💪 ${fmt(meal.protein)}g protein</span>` : ''}
+            ${meal.carbs    ? `<span class="macro">🌾 ${fmt(meal.carbs)}g carbs</span>` : ''}
+            ${meal.fat      ? `<span class="macro">🧈 ${fmt(meal.fat)}g fat</span>` : ''}
           </div>
+          ${chipsHtml}
           <div class="meal-date">${new Date(meal.loggedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
         </div>
         <div class="meal-card-actions" style="display:flex; gap:0.4rem">
@@ -170,7 +220,8 @@ async function loadMeals() {
           <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   } catch {}
 }
 

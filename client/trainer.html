@@ -41,7 +41,7 @@
       <div class="user-info" id="user-info-wrap" style="position:relative">
         <button class="user-trigger" onclick="toggleProfileDropdown()">
           <div class="avatar-placeholder" id="avatar-initial">?</div>
-          <span class="user-name" id="user-name-display"></span>
+          <span class="user-name" id="user-name-display">Loading...</span>
           <span class="dropdown-chevron" id="profile-chevron">▾</span>
         </button>
         <button class="logout-btn" onclick="logout()">Sign out</button>
@@ -147,13 +147,60 @@
         <div class="rings-row" id="rings-container">
           <div class="rings-loading">Loading nutrition data...</div>
         </div>
+        <div class="trainer-micros-label" id="trainer-micros-label" style="display:none">Micronutrients · % of daily value</div>
+        <div class="micros-grid compact" id="trainer-micros-grid"></div>
       </div>
 
       <!-- Daily Targets -->
       <div class="card" id="targets-card">
         <div class="section-title">🎯 Your Daily Targets</div>
+
+        <div class="targets-toolbar">
+          <div class="targets-toolbar-status" id="targets-status">Auto-calculated from your profile.</div>
+          <button class="targets-edit-btn" id="targets-edit-btn" onclick="toggleTargetsEdit()">✏️ Edit</button>
+        </div>
+
         <div class="targets-grid" id="targets-grid">
           <div class="rings-loading">Loading targets...</div>
+        </div>
+
+        <!-- Formula breakdown — shown when not editing -->
+        <div class="target-formula-wrap" id="target-formula" style="display:none">
+          <button class="target-formula-toggle" onclick="toggleFormula()" id="target-formula-toggle">
+            <span>📐 How this is calculated</span>
+            <span class="target-formula-chevron" id="target-formula-chevron">▾</span>
+          </button>
+          <div class="target-formula-body" id="target-formula-body" style="display:none"></div>
+        </div>
+
+        <!-- Inline editor — shown when editing -->
+        <div id="targets-editor" style="display:none">
+          <div class="field" style="margin-top:1.25rem">
+            <label>Daily Calorie Goal</label>
+            <input type="number" id="edit-calories" min="500" max="6000" step="10" />
+          </div>
+          <div class="macro-split-editor">
+            <div class="macro-split-row">
+              <span class="macro-split-label" style="color:#ff4d8f">Protein</span>
+              <input type="range" min="10" max="60" step="1" class="macro-split-slider" id="slider-protein" oninput="onSplitChange('protein', this.value)" />
+              <input type="number" min="0" max="100" class="macro-split-pct-input" id="pct-protein" oninput="onSplitChange('protein', this.value)" />
+            </div>
+            <div class="macro-split-row">
+              <span class="macro-split-label" style="color:#a78bfa">Carbs</span>
+              <input type="range" min="10" max="70" step="1" class="macro-split-slider" id="slider-carbs" oninput="onSplitChange('carbs', this.value)" />
+              <input type="number" min="0" max="100" class="macro-split-pct-input" id="pct-carbs" oninput="onSplitChange('carbs', this.value)" />
+            </div>
+            <div class="macro-split-row">
+              <span class="macro-split-label" style="color:#fbbf24">Fat</span>
+              <input type="range" min="10" max="60" step="1" class="macro-split-slider" id="slider-fat" oninput="onSplitChange('fat', this.value)" />
+              <input type="number" min="0" max="100" class="macro-split-pct-input" id="pct-fat" oninput="onSplitChange('fat', this.value)" />
+            </div>
+            <div class="macro-split-summary" id="split-summary"></div>
+            <div style="display:flex; gap:0.6rem; margin-top:0.4rem; flex-wrap:wrap">
+              <button class="save-btn" id="targets-save-btn" onclick="saveTargets()" style="margin-top:0; flex:1; min-width:160px">💾 Save Targets</button>
+              <button class="outline-btn" onclick="resetTargets()" style="margin-top:0">↺ Reset to Auto</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -161,6 +208,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <script src="./nutrition.js"></script>
   <script src="./profile-dropdown.js"></script>
   <script src="./trainer.js"></script>
 </body>

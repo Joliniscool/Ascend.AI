@@ -15,6 +15,14 @@ const userSchema = new mongoose.Schema({
   dailyProteinGoal:  { type: Number },
   dailyFatGoal:      { type: Number },
   dailyCarbsGoal:    { type: Number },
+  // When true, user has manually overridden auto-computed targets — don't recompute on profile save.
+  customTargets:     { type: Boolean, default: false },
+  // Macro split as % of calories (must sum to 100). Defaults derived from current targets.
+  macroSplit: {
+    protein: { type: Number, default: 30 },
+    carbs:   { type: Number, default: 45 },
+    fat:     { type: Number, default: 25 },
+  },
   currentStreak:  { type: Number, default: 0 },
   longestStreak:  { type: Number, default: 0 },
   lastLoggedDate: { type: Date },

@@ -177,7 +177,8 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0;
 }
 
 .stat-card {
@@ -239,6 +240,10 @@ body {
   font-size: 0.95rem;
   transition: border-color 0.2s, box-shadow 0.2s;
   outline: none;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 .field input:focus, .field select:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(255,77,143,0.1); }
 .field select option { background: var(--surface2); }
@@ -528,6 +533,19 @@ body {
 .chat-header-title { font-family: 'Nunito', sans-serif; font-weight: 900; font-size: 1.05rem; }
 .chat-header-sub { font-size: 0.75rem; color: var(--muted); }
 .chat-online { width: 9px; height: 9px; border-radius: 50%; background: #4ade80; margin-left: auto; flex-shrink: 0; box-shadow: 0 0 6px #4ade80; }
+.chat-close-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.55rem;
+  margin-left: 0.4rem;
+  border-radius: 8px;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+.chat-close-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
 
 .chat-messages {
   flex: 1;
@@ -1200,3 +1218,298 @@ body {
   .bmi-card { flex-direction: column; align-items: flex-start; gap: 1rem; }
   .rings-row-inner { flex-direction: column; align-items: flex-start; }
 }
+
+/* ── Today's Nutrition panel (dashboard) ── */
+.nutrition-panel {
+  display: grid;
+  grid-template-columns: minmax(160px, 200px) 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+.nutrition-cal-col { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; }
+.nutrition-cal-num {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 2.4rem;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.nutrition-cal-of { color: var(--muted); font-size: 0.85rem; }
+.nutrition-cal-pct { color: var(--text); font-size: 0.85rem; font-weight: 700; }
+
+.macro-bars-col { display: flex; flex-direction: column; gap: 0.7rem; }
+.macro-bar-row {
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  font-size: 0.85rem;
+}
+.macro-bar-label { font-weight: 700; }
+.macro-bar-track {
+  height: 8px; border-radius: 100px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden; position: relative;
+}
+.macro-bar-fill { height: 100%; border-radius: 100px; transition: width 0.6s ease; }
+.macro-bar-meta { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+.macro-bar-meta strong { color: var(--text); }
+
+/* ── Micro circles (2 rows of 5) ── */
+.micros-grid {
+  margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+}
+.micro-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+  padding: 0.4rem 0.2rem 0.45rem;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.micro-cell:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.15); }
+.micro-ring-wrap { position: relative; width: 38px; height: 38px; }
+.micro-ring-wrap svg { display: block; }
+.micro-ring-center {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem;
+}
+.micro-pct {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.68rem;
+  margin-top: 0.05rem;
+}
+.micro-label {
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 700;
+}
+.micro-amount {
+  font-size: 0.6rem;
+  color: var(--muted);
+}
+/* Trainer card uses an even smaller variant */
+.micros-grid.compact .micro-ring-wrap { width: 32px; height: 32px; }
+.micros-grid.compact .micro-ring-center { font-size: 0.7rem; }
+.micros-grid.compact .micro-pct { font-size: 0.62rem; }
+.micros-grid.compact .micro-label { font-size: 0.52rem; }
+.micros-grid.compact .micro-amount { font-size: 0.55rem; }
+
+.micros-toggle {
+  margin-top: 1.25rem;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255,255,255,0.025);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 0.7rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+}
+.micros-toggle:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,124,74,0.4); }
+.micros-toggle-chevron { font-size: 0.75rem; color: var(--muted); }
+.micros-toggle + .micros-grid,
+.micros-toggle + .meal-details-micros { margin-top: 0.6rem; }
+
+.trainer-micros-label {
+  margin-top: 1.5rem;
+  margin-bottom: 0.6rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+}
+@media (max-width: 720px) {
+  .nutrition-panel { grid-template-columns: 1fr; }
+  .micros-grid { grid-template-columns: repeat(5, 1fr); gap: 0.4rem; }
+}
+@media (max-width: 480px) {
+  .micros-grid { grid-template-columns: repeat(5, 1fr); }
+  .micro-ring-wrap { width: 32px; height: 32px; }
+  .micro-label { font-size: 0.52rem; }
+}
+
+/* ── Target breakdown / editor (trainer) ── */
+.targets-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;
+}
+.targets-toolbar-status { color: var(--muted); font-size: 0.85rem; }
+.targets-toolbar-status strong { color: var(--text); }
+.targets-edit-btn {
+  background: rgba(255,124,74,0.12);
+  border: 1px solid rgba(255,124,74,0.4);
+  color: var(--accent);
+  padding: 0.45rem 0.9rem;
+  border-radius: 100px;
+  font-family: inherit; font-weight: 700; font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.targets-edit-btn:hover { background: rgba(255,124,74,0.22); }
+
+.target-formula-wrap {
+  margin-top: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.025);
+  overflow: hidden;
+}
+.target-formula-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.85rem 1.2rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.target-formula-toggle:hover { background: rgba(255,255,255,0.04); }
+.target-formula-chevron {
+  font-size: 0.8rem;
+  color: var(--muted);
+  transition: transform 0.2s;
+}
+.target-formula-body {
+  padding: 0 1.2rem 1rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.7;
+  border-top: 1px dashed var(--border);
+  padding-top: 0.85rem;
+}
+.target-formula-body code {
+  background: rgba(255,255,255,0.05);
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+  color: var(--text);
+  font-family: ui-monospace, 'SF Mono', monospace;
+  font-size: 0.78rem;
+}
+.target-formula-body b { color: var(--text); }
+
+.macro-split-editor {
+  margin-top: 1rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+.macro-split-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 90px;
+  gap: 1rem;
+  align-items: center;
+}
+.macro-split-label { font-weight: 800; font-family: 'Nunito', sans-serif; }
+.macro-split-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 100px;
+  outline: none;
+}
+.macro-split-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  background: var(--accent2);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid white;
+}
+.macro-split-pct-input {
+  width: 90px; text-align: right;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  color: var(--text);
+  font-family: inherit;
+  box-sizing: border-box;
+}
+.macro-split-summary {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.7rem 1rem;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+.macro-split-summary.invalid { background: rgba(255,77,143,0.08); color: var(--accent2); }
+
+/* ── Meal-card highlights (high protein / high micros) ── */
+.meal-card-highlight-protein,
+.meal-card-full.meal-card-highlight-protein {
+  border: 1.5px solid rgba(134, 239, 172, 0.45);
+  box-shadow: 0 0 0 1px rgba(134, 239, 172, 0.15) inset;
+}
+.meal-highlight-chips {
+  display: flex; flex-wrap: wrap; gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+.meal-highlight-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.18rem 0.55rem;
+  border-radius: 100px;
+  background: rgba(134, 239, 172, 0.12);
+  color: #86efac;
+  border: 1px solid rgba(134, 239, 172, 0.3);
+}
+.meal-highlight-chip.protein {
+  background: rgba(255, 77, 143, 0.12);
+  color: #ff7c4a;
+  border-color: rgba(255, 124, 74, 0.4);
+}
+
+/* ── Meal-details micro grid ── */
+.meal-details-micros {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+.meal-detail-micro {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.55rem 0.7rem;
+  display: flex; flex-direction: column; gap: 0.15rem;
+}
+.meal-detail-micro.high {
+  background: rgba(134, 239, 172, 0.08);
+  border-color: rgba(134, 239, 172, 0.35);
+}
+.meal-detail-micro-row1 {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 0.78rem; font-weight: 700;
+}
+.meal-detail-micro-row2 {
+  font-size: 0.7rem; color: var(--muted);
+}
+.meal-detail-micro-row1 .pct { color: #86efac; font-family: 'Nunito', sans-serif; }
+.meal-detail-micro.limit .pct { color: #fda4af; }

@@ -171,14 +171,26 @@
         </div>
       </div>
 
-      <!-- Stats -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-icon">🔥</div>
-          <div class="stat-label">Today's Calories</div>
-          <div class="stat-value" id="stat-calories">—</div>
-          <div class="stat-unit">of <span id="stat-goal">—</span> goal</div>
+      <!-- Today's Nutrition -->
+      <div class="card" id="nutrition-card">
+        <div class="section-title">🍽️ Today's Nutrition</div>
+        <div class="nutrition-panel" id="nutrition-panel">
+          <div class="nutrition-cal-col">
+            <div class="nutrition-cal-num" id="stat-calories">—</div>
+            <div class="nutrition-cal-of">of <span id="stat-goal">—</span> kcal</div>
+            <div class="nutrition-cal-pct" id="stat-cal-pct">—</div>
+          </div>
+          <div class="macro-bars-col" id="macro-bars-col"></div>
         </div>
+        <button class="micros-toggle" id="micros-toggle" onclick="toggleMicros()" type="button">
+          <span>🧪 Micronutrient Breakdown</span>
+          <span class="micros-toggle-chevron" id="micros-toggle-chevron">▾</span>
+        </button>
+        <div class="micros-grid" id="micros-grid" style="display:none"></div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon">⚡</div>
           <div class="stat-label">Current Streak</div>
@@ -202,10 +214,13 @@
       <!-- Log Meal -->
       <div class="card">
         <div class="section-title">📷 Log a Meal</div>
-        <a href="/log-meal.html" class="save-btn" style="display:block; text-align:center; text-decoration:none; margin-bottom:1.25rem">
+        <a href="/log-meal.html" class="save-btn" style="display:block; text-align:center; text-decoration:none; margin-bottom:0.75rem">
           ✨ Log with AI Photo Analysis
         </a>
-        <div style="text-align:center; color:var(--muted); font-size:0.85rem; margin-bottom:1rem">— or enter manually below —</div>
+        <a href="/log-meal.html?mode=manual" class="outline-btn" style="display:block; text-align:center; text-decoration:none; margin-top:0; margin-bottom:1.25rem">
+          🔍 Build from USDA Ingredients
+        </a>
+        <div style="text-align:center; color:var(--muted); font-size:0.85rem; margin-bottom:1rem">— or enter macros manually below —</div>
         <div class="log-form">
           <div class="photo-area">
             <input type="file" id="food-image" accept="image/*" style="display:none" onchange="previewImage(this)" />
@@ -288,6 +303,7 @@
         <div class="chat-header-sub">Your brutally honest coach</div>
       </div>
       <span class="chat-online"></span>
+      <button class="chat-close-btn" onclick="toggleChat()" title="Close chat">✕</button>
     </div>
     <div class="chat-messages" id="chat-messages">
       <div class="chat-msg bot">Oh great, you opened the chat. What do you want, chud? Ask me about your macros before I lose respect for you entirely.</div>
@@ -299,6 +315,7 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <script src="./nutrition.js"></script>
   <script src="./meal-details.js"></script>
   <script src="./profile-dropdown.js"></script>
   <script src="./platy-chase.js"></script>

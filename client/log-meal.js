@@ -14,7 +14,11 @@ async function init() {
     document.getElementById('user-name-display').textContent = data.user.name || data.user.email;
     document.getElementById('avatar-initial').textContent = (data.user.name || data.user.email || '?')[0].toUpperCase();
     document.getElementById('page').style.display = 'block';
+    loadProfile();
     setupDropZone();
+    if (new URLSearchParams(location.search).get('mode') === 'manual') {
+      startManualMode();
+    }
   } catch { window.location.href = '/'; }
 }
 
@@ -64,6 +68,37 @@ function showState(stateId) {
   ['upload-state', 'analyzing-state', 'review-state', 'empty-state'].forEach(id => {
     document.getElementById(id).style.display = id === stateId ? 'block' : 'none';
   });
+}
+
+function startManualMode() {
+  analyzeData = {
+    suggestedName: 'Meal',
+    imageUrl: null,
+    items: [],
+    healthScore: null,
+    healthReasoning: null,
+  };
+  reviewItems = [];
+
+  // Reskin the review screen for manual logging.
+  const pageTitle = document.querySelector('.page-title');
+  const pageSub = document.querySelector('.page-subtitle');
+  if (pageTitle) pageTitle.textContent = '🔍 Build a Meal';
+  if (pageSub)   pageSub.textContent   = 'Search USDA ingredients and build your meal piece by piece';
+  const reviewTitle = document.getElementById('review-title');
+  if (reviewTitle) reviewTitle.textContent = '🥗 Build Your Meal';
+  const addLabel = document.getElementById('add-food-label');
+  if (addLabel) addLabel.textContent = 'Add Food';
+
+  renderReview();
+  showState('review-state');
+  // Auto-open the search panel so the user can start adding ingredients immediately.
+  setTimeout(() => {
+    if (typeof toggleAddFood === 'function') {
+      const panel = document.getElementById('add-food-panel');
+      if (panel && panel.style.display !== 'block') toggleAddFood();
+    }
+  }, 50);
 }
 
 async function startAnalyze() {
@@ -127,7 +162,14 @@ function stopElapsedTimer() {
 
 function renderReview() {
   document.getElementById('meal-name-input').value = analyzeData.suggestedName || 'Meal';
-  document.getElementById('review-image').src = analyzeData.imageUrl;
+  const imgEl = document.getElementById('review-image');
+  if (analyzeData.imageUrl) {
+    imgEl.src = analyzeData.imageUrl;
+    imgEl.style.display = '';
+  } else {
+    imgEl.removeAttribute('src');
+    imgEl.style.display = 'none';
+  }
 
   const container = document.getElementById('detected-items');
   container.innerHTML = reviewItems.map((item, idx) => {
@@ -323,6 +365,8 @@ async function saveMeal() {
         imageUrl: analyzeData.imageUrl,
         items: itemsToSave,
         isPublic: document.getElementById('is-public-input').checked,
+        healthScore: analyzeData.healthScore,
+        healthReasoning: analyzeData.healthReasoning,
       }),
     });
     if (!res.ok) {
