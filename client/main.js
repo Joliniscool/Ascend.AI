@@ -94,6 +94,19 @@ function renderNutritionPanel(data) {
   document.getElementById('stat-goal').textContent = goal || '—';
   document.getElementById('stat-cal-pct').textContent = goal ? `${fmtPct(tCal, goal)}% of goal` : '';
 
+  // Animate the calorie progress ring: r=68 → circumference ≈ 427.
+  // stroke-dashoffset starts at full circumference (empty) and shrinks toward
+  // 0 (full ring) as today's calories approach the daily goal. Capped at 100%.
+  const progress = document.getElementById('cal-ring-progress');
+  if (progress) {
+    const C = 2 * Math.PI * 68;
+    const pct = goal > 0 ? Math.min(1, tCal / goal) : 0;
+    // Defer one frame so the CSS transition kicks in instead of jumping.
+    requestAnimationFrame(() => {
+      progress.style.strokeDashoffset = C * (1 - pct);
+    });
+  }
+
   const todayPcts = macroPctOfCalories(tP, tC, tF);
   const macros = [
     { key: 'protein', label: 'Protein', goal: data.dailyProteinGoal, today: tP, pctToday: todayPcts.protein, pctGoal: split.protein, color: '#ff4d8f', unit: 'g' },

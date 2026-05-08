@@ -121,13 +121,34 @@ async function loadComments(mealId) {
   }
 }
 
+// Comments are capped at this many top-level threads on first render so the
+// feed card doesn't get monstrously tall. Clicking "View more" expands.
+const COMMENTS_VISIBLE_LIMIT = 3;
+const _expandedComments = new Set();  // mealIds for which the user clicked "View more"
+
 function renderComments(mealId, comments) {
   const list = document.getElementById(`comments-list-${mealId}`);
   if (!comments.length) {
     list.innerHTML = '<div class="comments-loading" style="padding:0.5rem 0">No comments yet.</div>';
     return;
   }
-  list.innerHTML = comments.map(c => commentHtml(mealId, c)).join('');
+  const expanded = _expandedComments.has(String(mealId));
+  const showAll = expanded || comments.length <= COMMENTS_VISIBLE_LIMIT;
+  const visible = showAll ? comments : comments.slice(0, COMMENTS_VISIBLE_LIMIT);
+  const hidden = comments.length - visible.length;
+
+  const visibleHtml = visible.map(c => commentHtml(mealId, c)).join('');
+  const moreBtnHtml = hidden > 0
+    ? `<button class="comments-more-btn" onclick="expandComments('${mealId}')">
+         View ${hidden} more comment${hidden !== 1 ? 's' : ''} ↓
+       </button>`
+    : '';
+  list.innerHTML = visibleHtml + moreBtnHtml;
+}
+
+function expandComments(mealId) {
+  _expandedComments.add(String(mealId));
+  loadComments(mealId);  // re-fetch + re-render with the limit lifted
 }
 
 function commentHtml(mealId, c) {

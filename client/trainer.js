@@ -193,7 +193,7 @@ function smallRingHtml(label, current, goal, unit, colorA, colorB) {
 
   return `
     <div class="ring-small-wrap">
-      <svg class="ring-svg-small" viewBox="0 0 92 92" width="92" height="92">
+      <svg class="ring-svg-small" viewBox="0 0 92 92" width="160" height="160">
         <defs>
           <linearGradient id="grad-${id}" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stop-color="${colorA}"/>
