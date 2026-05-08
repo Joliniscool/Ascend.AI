@@ -1054,6 +1054,10 @@ body {
   object-fit: contain;
   filter: drop-shadow(0 4px 18px rgba(255,124,74,0.35));
 }
+#bmi-platypus {
+  width: 200px;
+  height: 200px;
+}
 .bmi-stats-col { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; }
 .bmi-number-row { display: flex; align-items: baseline; gap: 0.5rem; }
 .bmi-number {
