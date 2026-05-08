@@ -33,17 +33,19 @@ router.post('/', isAuthenticated, upload.single('image'), async (req, res) => {
       isPublic: isPublic !== 'false', userEdited: true
     });
 
-    // Update streak
-    const user = await User.findById(req.user._id);
-    const today = new Date().toDateString();
-    const lastLogged = user.lastLoggedDate ? new Date(user.lastLoggedDate).toDateString() : null;
-    const yesterday = new Date(Date.now() - 86400000).toDateString();
-
-    if (lastLogged !== today) {
-      user.currentStreak = lastLogged === yesterday ? user.currentStreak + 1 : 1;
-      user.longestStreak = Math.max(user.longestStreak, user.currentStreak);
-      user.lastLoggedDate = new Date();
-      await user.save();
+    try {
+      const user = await User.findById(req.user._id);
+      const today = new Date().toDateString();
+      const lastLogged = user.lastLoggedDate ? new Date(user.lastLoggedDate).toDateString() : null;
+      const yesterday = new Date(Date.now() - 86400000).toDateString();
+      if (lastLogged !== today) {
+        user.currentStreak = lastLogged === yesterday ? user.currentStreak + 1 : 1;
+        user.longestStreak = Math.max(user.longestStreak, user.currentStreak);
+        user.lastLoggedDate = new Date();
+        await user.save();
+      }
+    } catch (streakErr) {
+      console.error('Streak update failed:', streakErr.message);
     }
 
     res.status(201).json(meal);
