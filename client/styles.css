@@ -553,6 +553,62 @@ body {
 }
 .chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ── Profile dropdown ── */
+.user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.2rem 0.5rem 0.2rem 0.2rem;
+  border-radius: 100px;
+  color: var(--text);
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.user-trigger:hover { background: rgba(255,255,255,0.06); }
+
+.dropdown-chevron {
+  font-size: 0.65rem;
+  color: var(--muted);
+  transition: transform 0.2s;
+  line-height: 1;
+}
+
+.profile-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  z-index: 500;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.profile-dropdown.open {
+  display: block;
+  animation: fadeUp 0.18s ease both;
+}
+
+.dropdown-header {
+  margin-bottom: 1.25rem;
+}
+.dropdown-title {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 1rem;
+}
+
+.profile-dropdown-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
 /* ── Log Meal improvements ── */
 .drop-zone {
   cursor: pointer;
