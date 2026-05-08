@@ -19,6 +19,7 @@ function showLogin() {
   if (chatBtn)   chatBtn.style.display   = 'none';
   if (chatPanel) chatPanel.style.display = 'none';
   if (chatNotif) chatNotif.classList.remove('show');
+  if (typeof destroyChasePlatypus === 'function') destroyChasePlatypus();
 }
 
 function showDashboard(user) {
@@ -27,6 +28,7 @@ function showDashboard(user) {
   // Restore chat UI
   const chatBtn = document.querySelector('.chat-bubble');
   if (chatBtn) chatBtn.style.display = 'flex';
+  if (typeof initChasePlatypus === 'function') initChasePlatypus(user.name || user.email);
   document.getElementById('user-name-display').textContent = user.name || user.email;
   document.getElementById('welcome-msg').textContent = `Welcome back, ${user.name?.split(' ')[0] || 'friend'}! 🌸`;
   document.getElementById('avatar-initial').textContent = (user.name || user.email || '?')[0].toUpperCase();
