@@ -1,13 +1,18 @@
 const mongoose = require('mongoose');
 
 const mealItemSchema = new mongoose.Schema({
-  fdcId:    { type: Number },
-  name:     { type: String },
-  grams:    { type: Number },
-  calories: { type: Number },
-  protein:  { type: Number },
-  carbs:    { type: Number },
-  fat:      { type: Number },
+  fdcId:        { type: Number },
+  name:         { type: String },
+  category:     { type: String },
+  grams:        { type: Number },
+  calories:     { type: Number },
+  protein:      { type: Number },
+  carbs:        { type: Number },
+  fat:          { type: Number },
+  sugar:        { type: Number },
+  saturatedFat: { type: Number },
+  sodium:       { type: Number },
+  fiber:        { type: Number },
 }, { _id: false });
 
 const mealSchema = new mongoose.Schema({

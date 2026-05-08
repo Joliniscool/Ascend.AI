@@ -172,6 +172,7 @@ async function loadMeals() {
   try {
     const res = await fetch(`${API}/api/meals/my`, { credentials: 'include' });
     const meals = await res.json();
+    if (typeof setMealSource === 'function') setMealSource(meals);
     const grid = document.getElementById('meals-grid');
     if (!meals.length) {
       grid.innerHTML = '<div class="meals-empty">No meals logged yet — add your first one above! 🌸</div>';
@@ -192,7 +193,10 @@ async function loadMeals() {
           </div>
           <div class="meal-date">${new Date(meal.loggedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
         </div>
-        <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
+        <div class="meal-card-actions" style="display:flex; gap:0.4rem">
+          <button class="meal-view-btn" onclick="openMealById('${meal._id}')" title="View details">👁️</button>
+          <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
+        </div>
       </div>
     `).join('');
   } catch {}

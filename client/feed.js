@@ -225,6 +225,31 @@ async function deleteComment(commentId, mealId) {
 
 // ── Ascension rating ──────────────────────────────────────────
 
+// USDA category → health bias. Positive = ascend, negative = chud.
+const CATEGORY_HEALTH = {
+  'Vegetables and Vegetable Products': +5,
+  'Fruits and Fruit Juices': +4,
+  'Legumes and Legume Products': +4,
+  'Finfish and Shellfish Products': +3,
+  'Nut and Seed Products': +2,
+  'Cereal Grains and Pasta': +1,
+  'Poultry Products': +1,
+  'Spices and Herbs': +1,
+  'Dairy and Egg Products': 0,
+  'Beef Products': 0,
+  'Beverages': 0,
+  'Lamb, Veal, and Game Products': 0,
+  'Pork Products': -1,
+  'Soups, Sauces, and Gravies': -1,
+  'Baked Products': -2,
+  'Fats and Oils': -2,
+  'Snacks': -3,
+  'Sausages and Luncheon Meats': -4,
+  'Sweets': -5,
+  'Fast Foods': -5,
+  'Meals, Entrees, and Side Dishes': -2,
+};
+
 function calcHealthScore(meal) {
   const { calories, protein = 0, fat = 0 } = meal;
   if (!calories) return null;
@@ -233,7 +258,7 @@ function calcHealthScore(meal) {
   const fatPct     = (fat * 9)     / calories;
 
   let score = 50;
-  score += Math.min(proteinPct * 90, 35);  // high protein % = good
+  score += Math.min(proteinPct * 90, 35);
 
   if      (calories > 1100) score -= 30;
   else if (calories > 850)  score -= 18;
@@ -242,6 +267,39 @@ function calcHealthScore(meal) {
   if      (fatPct > 0.55) score -= 20;
   else if (fatPct > 0.40) score -= 12;
   else if (fatPct > 0.30) score -= 5;
+
+  // Ingredient-aware bonuses if items[] is populated (new meals only).
+  // Weighted by each item's gram contribution so a 5g sprig of parsley doesn't
+  // move the meter as much as a 200g serving of fries.
+  if (Array.isArray(meal.items) && meal.items.length > 0) {
+    const totalGrams = meal.items.reduce((s, i) => s + (i.grams || 0), 0) || 1;
+    let categoryBias = 0;
+    let micrBias = 0;
+    for (const item of meal.items) {
+      const weight = (item.grams || 0) / totalGrams;
+      const catScore = CATEGORY_HEALTH[item.category] || 0;
+      categoryBias += catScore * weight;
+
+      // Sugar density (g per 100kcal): >12 is a strong chud signal.
+      if (item.calories > 0 && item.sugar) {
+        const sugarPer100 = (item.sugar / item.calories) * 100;
+        if (sugarPer100 > 18) micrBias -= 3 * weight;
+        else if (sugarPer100 > 12) micrBias -= 2 * weight;
+      }
+      // Saturated fat density (g per 100kcal): >5 = chud.
+      if (item.calories > 0 && item.saturatedFat) {
+        const satPer100 = (item.saturatedFat / item.calories) * 100;
+        if (satPer100 > 5) micrBias -= 2 * weight;
+      }
+      // Fiber density (g per 100kcal): >3 = ascend.
+      if (item.calories > 0 && item.fiber) {
+        const fibPer100 = (item.fiber / item.calories) * 100;
+        if (fibPer100 > 3) micrBias += 2 * weight;
+      }
+    }
+    score += categoryBias * 2.5;  // category is the strongest signal
+    score += micrBias;
+  }
 
   return Math.max(5, Math.min(95, Math.round(score)));
 }

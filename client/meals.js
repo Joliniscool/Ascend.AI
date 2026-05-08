@@ -17,6 +17,7 @@ async function loadMeals() {
   try {
     const res = await fetch(`${API}/api/meals/my`, { credentials: 'include' });
     allMeals = await res.json();
+    if (typeof setMealSource === 'function') setMealSource(allMeals);
     filterMeals();
   } catch {
     document.getElementById('meals-grid').innerHTML = '<div class="meals-empty">Failed to load meals.</div>';
@@ -61,7 +62,10 @@ function renderMeals(meals) {
           ${new Date(meal.loggedAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
-      <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
+      <div style="display:flex; gap:0.4rem">
+        <button class="meal-view-btn" onclick="openMealById('${meal._id}')" title="View details">👁️</button>
+        <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
+      </div>
     </div>
   `).join('');
 }

@@ -162,11 +162,16 @@ router.post('/confirm', isAuthenticated, async (req, res) => {
       return {
         fdcId: food.fdcId,
         name: food.shortName || food.name,
+        category: food.category,
         grams,
         calories: Math.round(itemCals),
         protein:  Math.round(itemProt * 10) / 10,
         carbs:    Math.round(itemCarb * 10) / 10,
         fat:      Math.round(itemFat  * 10) / 10,
+        sugar:        Math.round((food.per100g.sugar        || 0) * factor * 10) / 10,
+        saturatedFat: Math.round((food.per100g.saturatedFat || 0) * factor * 10) / 10,
+        sodium:       Math.round((food.per100g.sodium       || 0) * factor),
+        fiber:        Math.round((food.per100g.fiber        || 0) * factor * 10) / 10,
       };
     }).filter(Boolean);
 
