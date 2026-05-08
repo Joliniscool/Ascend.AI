@@ -4,7 +4,9 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "seed:foods": "node scripts/seed-foods.js",
+    "seed:foods:clear": "node scripts/seed-foods.js --clear"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.94.0",
