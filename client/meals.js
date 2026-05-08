@@ -61,8 +61,18 @@ function renderMeals(meals) {
           ${new Date(meal.loggedAt).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
+      <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
     </div>
   `).join('');
+}
+
+async function deleteMeal(id) {
+  try {
+    const res = await fetch(`${API}/api/meals/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (!res.ok) throw new Error();
+    showToast('Meal deleted');
+    loadMeals();
+  } catch { showToast('Could not delete meal ❌'); }
 }
 
 function renderSummary(meals) {

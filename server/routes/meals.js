@@ -50,6 +50,16 @@ router.get('/my', isAuthenticated, async (req, res) => {
   }
 });
 
+router.delete('/:id', isAuthenticated, async (req, res) => {
+  try {
+    const meal = await Meal.findOneAndDelete({ _id: req.params.id, user: req.user._id });
+    if (!meal) return res.status(404).json({ error: 'Meal not found' });
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/feed', isAuthenticated, async (req, res) => {
   try {
     const meals = await Meal.find({ isPublic: true }).populate('user', 'name avatar').sort({ loggedAt: -1 }).limit(30);

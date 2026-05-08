@@ -194,44 +194,55 @@
         <div class="section-title">📷 Log a Meal</div>
         <div class="log-form">
           <div class="photo-area">
-            <div class="drop-zone">
+            <input type="file" id="food-image" accept="image/*" style="display:none" onchange="previewImage(this)" />
+            <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)" />
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('food-image').click()">
               <div class="drop-zone-placeholder" id="drop-placeholder">
-                <span>🍱</span>
-                <p>Photo preview</p>
+                <span>📷</span>
+                <p>Click or drag photo here</p>
+                <span class="drop-hint">optional</span>
               </div>
               <img id="image-preview" alt="food preview" />
+              <button class="remove-photo-btn" id="remove-photo" onclick="removePhoto(event)">✕</button>
             </div>
-            <div class="photo-btns">
-              <input type="file" id="food-image" accept="image/*" style="display:none" onchange="previewImage(this)" />
-              <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="previewImage(this)" />
-              <button class="outline-btn" onclick="document.getElementById('food-image').click()">📁 Upload</button>
-              <button class="outline-btn" onclick="document.getElementById('camera-input').click()">📸 Take Photo</button>
-            </div>
+            <button class="outline-btn camera-btn" onclick="document.getElementById('camera-input').click()">📸 Take Photo</button>
           </div>
           <div class="log-fields">
             <div class="field">
-              <label>Meal Name</label>
-              <input type="text" id="meal-name" placeholder="e.g. Chicken Bowl" />
+              <label>Meal Name <span style="color:var(--accent2)">*</span></label>
+              <input type="text" id="meal-name" placeholder="e.g. Chipotle Chicken Bowl" />
             </div>
             <div class="macros-row">
               <div class="field">
                 <label>Calories</label>
-                <input type="number" id="meal-calories" placeholder="kcal" min="0" />
+                <div class="macro-input-wrap">
+                  <input type="number" id="meal-calories" placeholder="0" min="0" />
+                  <span class="macro-unit">kcal</span>
+                </div>
               </div>
               <div class="field">
-                <label>Protein (g)</label>
-                <input type="number" id="meal-protein" placeholder="g" min="0" />
+                <label>Protein</label>
+                <div class="macro-input-wrap">
+                  <input type="number" id="meal-protein" placeholder="0" min="0" />
+                  <span class="macro-unit">g</span>
+                </div>
               </div>
               <div class="field">
-                <label>Carbs (g)</label>
-                <input type="number" id="meal-carbs" placeholder="g" min="0" />
+                <label>Carbs</label>
+                <div class="macro-input-wrap">
+                  <input type="number" id="meal-carbs" placeholder="0" min="0" />
+                  <span class="macro-unit">g</span>
+                </div>
               </div>
               <div class="field">
-                <label>Fat (g)</label>
-                <input type="number" id="meal-fat" placeholder="g" min="0" />
+                <label>Fat</label>
+                <div class="macro-input-wrap">
+                  <input type="number" id="meal-fat" placeholder="0" min="0" />
+                  <span class="macro-unit">g</span>
+                </div>
               </div>
             </div>
-            <button class="save-btn" id="log-btn" onclick="logMeal()">Log Meal 🍽️</button>
+            <button class="save-btn" id="log-btn" onclick="logMeal()" style="margin-top:1rem">Log Meal 🍽️</button>
           </div>
         </div>
       </div>

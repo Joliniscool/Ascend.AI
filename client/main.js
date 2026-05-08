@@ -21,7 +21,26 @@ function showDashboard(user) {
   document.getElementById('welcome-msg').textContent = `Welcome back, ${user.name?.split(' ')[0] || 'friend'}! 🌸`;
   document.getElementById('avatar-initial').textContent = (user.name || user.email || '?')[0].toUpperCase();
   loadJudge();
-  
+  setupDropZone();
+}
+
+function setupDropZone() {
+  const zone = document.getElementById('drop-zone');
+  if (!zone) return;
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      const input = document.getElementById('food-image');
+      input.files = dt.files;
+      previewImage(input);
+    }
+  });
 }
 
 async function loadStats() {
@@ -93,13 +112,21 @@ function previewImage(input) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (e) => {
-    const preview = document.getElementById('image-preview');
-    const placeholder = document.getElementById('drop-placeholder');
-    preview.src = e.target.result;
-    preview.style.display = 'block';
-    placeholder.style.display = 'none';
+    document.getElementById('image-preview').src = e.target.result;
+    document.getElementById('image-preview').style.display = 'block';
+    document.getElementById('drop-placeholder').style.display = 'none';
+    document.getElementById('remove-photo').style.display = 'flex';
   };
   reader.readAsDataURL(file);
+}
+
+function removePhoto(event) {
+  event.stopPropagation();
+  document.getElementById('food-image').value = '';
+  document.getElementById('camera-input').value = '';
+  document.getElementById('image-preview').style.display = 'none';
+  document.getElementById('drop-placeholder').style.display = 'flex';
+  document.getElementById('remove-photo').style.display = 'none';
 }
 
 async function logMeal() {
@@ -133,6 +160,7 @@ async function logMeal() {
     document.getElementById('camera-input').value = '';
     document.getElementById('image-preview').style.display = 'none';
     document.getElementById('drop-placeholder').style.display = 'flex';
+    document.getElementById('remove-photo').style.display = 'none';
     loadMeals();
     loadStats();
   } catch { showToast('Failed to log meal ❌'); }
@@ -158,15 +186,26 @@ async function loadMeals() {
           <div class="meal-name-text">${meal.name}</div>
           <div class="meal-macros">
             ${meal.calories ? `<span class="macro">🔥 ${meal.calories} kcal</span>` : ''}
-            ${meal.protein ? `<span class="macro">💪 ${meal.protein}g protein</span>` : ''}
-            ${meal.carbs ? `<span class="macro">🌾 ${meal.carbs}g carbs</span>` : ''}
-            ${meal.fat ? `<span class="macro">🧈 ${meal.fat}g fat</span>` : ''}
+            ${meal.protein  ? `<span class="macro">💪 ${meal.protein}g protein</span>` : ''}
+            ${meal.carbs    ? `<span class="macro">🌾 ${meal.carbs}g carbs</span>` : ''}
+            ${meal.fat      ? `<span class="macro">🧈 ${meal.fat}g fat</span>` : ''}
           </div>
           <div class="meal-date">${new Date(meal.loggedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
         </div>
+        <button class="meal-delete-btn" onclick="deleteMeal('${meal._id}')" title="Delete meal">✕</button>
       </div>
     `).join('');
   } catch {}
+}
+
+async function deleteMeal(id) {
+  try {
+    const res = await fetch(`${API}/api/meals/${id}`, { method: 'DELETE', credentials: 'include' });
+    if (!res.ok) throw new Error();
+    showToast('Meal deleted');
+    loadMeals();
+    loadStats();
+  } catch { showToast('Could not delete meal ❌'); }
 }
 
 // ── Chat ──
