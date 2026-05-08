@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ascend.AI — Meals</title>
+  <title>Ascend.AI — Feed</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./styles.css" />
@@ -34,8 +34,8 @@
       </div>
       <nav class="topbar-nav">
         <a href="/" class="nav-link">Dashboard</a>
-        <a href="/meals.html" class="nav-link active">Meals</a>
-        <a href="/feed.html" class="nav-link">Feed</a>
+        <a href="/meals.html" class="nav-link">Meals</a>
+        <a href="/feed.html" class="nav-link active">Feed</a>
       </nav>
       <div class="user-info">
         <div class="avatar-placeholder" id="avatar-initial">?</div>
@@ -44,51 +44,21 @@
       </div>
     </div>
 
-    <div class="main">
+    <div class="main" style="max-width: 640px">
       <div class="page-header">
         <div>
-          <h1 class="page-title">🍽️ My Meals</h1>
-          <p class="page-subtitle">Your full nutrition history</p>
-        </div>
-        <a href="/" class="outline-btn" style="margin-top:0; text-decoration:none;">+ Log New Meal</a>
-      </div>
-
-      <!-- Filters -->
-      <div class="card" style="padding: 1.25rem 2rem;">
-        <div class="filters-row">
-          <div class="field" style="flex:1; margin-top:0;">
-            <label>Search</label>
-            <input type="text" id="search-input" placeholder="Search meals..." oninput="filterMeals()" />
-          </div>
-          <div class="field" style="margin-top:0;">
-            <label>Sort by</label>
-            <select id="sort-select" onchange="filterMeals()">
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="calories-high">Most calories</option>
-              <option value="calories-low">Fewest calories</option>
-            </select>
-          </div>
+          <h1 class="page-title">🌍 Community Feed</h1>
+          <p class="page-subtitle">See what PlexTech members are eating</p>
         </div>
       </div>
 
-      <!-- Summary bar -->
-      <div class="summary-bar" id="summary-bar" style="display:none">
-        <span id="summary-count"></span>
-        <span id="summary-cals"></span>
-        <span id="summary-protein"></span>
-      </div>
-
-      <!-- Meals grid -->
-      <div class="card">
-        <div class="meals-full-grid" id="meals-grid">
-          <div class="meals-empty">Loading meals...</div>
-        </div>
+      <div id="feed-list">
+        <div class="meals-empty">Loading feed...</div>
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="./meals.js"></script>
+  <script src="./feed.js"></script>
 </body>
 </html>
