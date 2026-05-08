@@ -19,6 +19,7 @@ async function loadFeed() {
     const res = await fetch(`${API}/api/meals/feed`, { credentials: 'include' });
     const meals = await res.json();
     renderFeed(meals);
+    meals.forEach(meal => loadComments(meal._id));
   } catch {
     document.getElementById('feed-list').innerHTML = '<div class="meals-empty">Failed to load feed.</div>';
   }
@@ -54,12 +55,13 @@ function renderFeed(meals) {
         ${imageHtml}
         <div class="feed-meal-name">${meal.name}</div>
         ${macros ? `<div class="meal-macros" style="margin-top:0.5rem">${macros}</div>` : ''}
+        ${ascensionBarHtml(meal)}
         <div class="feed-card-footer">
           <button class="comment-toggle-btn" onclick="toggleComments('${meal._id}')">
             💬 <span id="comment-count-${meal._id}">Comments</span>
           </button>
         </div>
-        <div class="comments-section" id="comments-section-${meal._id}" style="display:none">
+        <div class="comments-section" id="comments-section-${meal._id}">
           <div class="comments-list" id="comments-list-${meal._id}"></div>
           <div class="comment-compose">
             ${userAvatarHtml(currentUser, 28)}
@@ -220,6 +222,72 @@ async function deleteComment(commentId, mealId) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────
+
+// ── Ascension rating ──────────────────────────────────────────
+
+function calcHealthScore(meal) {
+  const { calories, protein = 0, fat = 0 } = meal;
+  if (!calories) return null;
+
+  const proteinPct = (protein * 4) / calories;
+  const fatPct     = (fat * 9)     / calories;
+
+  let score = 50;
+  score += Math.min(proteinPct * 90, 35);  // high protein % = good
+
+  if      (calories > 1100) score -= 30;
+  else if (calories > 850)  score -= 18;
+  else if (calories > 650)  score -= 8;
+
+  if      (fatPct > 0.55) score -= 20;
+  else if (fatPct > 0.40) score -= 12;
+  else if (fatPct > 0.30) score -= 5;
+
+  return Math.max(5, Math.min(95, Math.round(score)));
+}
+
+const TIERS = [
+  { min: 0,  label: 'Big Back',    color: '#ff4444' },
+  { min: 23, label: 'Chudding',    color: '#ff7c4a' },
+  { min: 42, label: 'Larping',     color: '#f5c542' },
+  { min: 58, label: 'Ascending',   color: '#7fdd6f' },
+  { min: 75, label: 'Full Ascend', color: '#4ade80' },
+];
+
+function getTier(score) {
+  return [...TIERS].reverse().find(t => score >= t.min) || TIERS[0];
+}
+
+function ascensionBarHtml(meal) {
+  const score = calcHealthScore(meal);
+  if (score === null) return '';
+  const tier = getTier(score);
+  const platypusSvg = `<svg width="22" height="22" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="70" cy="86" rx="42" ry="31" fill="#ff7c4a"/>
+    <ellipse cx="70" cy="91" rx="26" ry="19" fill="#ffb89e"/>
+    <ellipse cx="70" cy="54" rx="28" ry="26" fill="#ff7c4a"/>
+    <ellipse cx="95" cy="60" rx="19" ry="9" fill="#ff4d8f"/>
+    <circle cx="80" cy="49" r="7" fill="white"/>
+    <circle cx="80" cy="49" r="4" fill="#1a0a0a"/>
+    <circle cx="82" cy="47" r="1.5" fill="white"/>
+    <ellipse cx="54" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(-8 54 116)"/>
+    <ellipse cx="86" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(8 86 116)"/>
+  </svg>`;
+
+  return `
+    <div class="ascension-wrap">
+      <div class="ascension-bar-row">
+        <span class="ascension-end-label">Chud</span>
+        <div class="ascension-track">
+          <div class="ascension-icon" style="left:${score}%">${platypusSvg}</div>
+        </div>
+        <span class="ascension-end-label">Ascend</span>
+      </div>
+      <div class="ascension-badge" style="background:${tier.color}22; color:${tier.color}; border-color:${tier.color}55">
+        ${tier.label}
+      </div>
+    </div>`;
+}
 
 function userAvatarHtml(user, size = 36) {
   const initial = (user?.name || '?')[0].toUpperCase();

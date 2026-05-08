@@ -705,6 +705,59 @@ body {
   font-size: 1.05rem;
 }
 
+/* ── Ascension rating ── */
+.ascension-wrap {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ascension-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ascension-end-label {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ascension-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 100px;
+  background: linear-gradient(to right, #ff4444, #ff7c4a, #f5c542, #7fdd6f, #4ade80);
+  position: relative;
+}
+
+.ascension-icon {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  pointer-events: none;
+  transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ascension-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 100px;
+  border: 1px solid;
+  letter-spacing: 0.03em;
+}
+
 /* ── Comments ── */
 .feed-card-footer {
   margin-top: 0.85rem;
