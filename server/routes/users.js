@@ -84,6 +84,9 @@ router.get('/stats', isAuthenticated, async (req, res) => {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const todaysMeals = await Meal.find({ user: req.user._id, loggedAt: { $gte: today } });
     const todaysCalories = todaysMeals.reduce((sum, m) => sum + (m.calories || 0), 0);
+    const todaysProtein  = todaysMeals.reduce((sum, m) => sum + (m.protein  || 0), 0);
+    const todaysFat      = todaysMeals.reduce((sum, m) => sum + (m.fat      || 0), 0);
+    const todaysCarbs    = todaysMeals.reduce((sum, m) => sum + (m.carbs    || 0), 0);
     res.json({
       currentWeight:    user.weightLog.at(-1)?.value,
       dailyCalorieGoal: user.dailyCalorieGoal,
@@ -91,6 +94,9 @@ router.get('/stats', isAuthenticated, async (req, res) => {
       dailyFatGoal:     user.dailyFatGoal,
       dailyCarbsGoal:   user.dailyCarbsGoal,
       todaysCalories,
+      todaysProtein,
+      todaysFat,
+      todaysCarbs,
       currentStreak:  user.currentStreak,
       longestStreak:  user.longestStreak,
       totalMeals,

@@ -947,8 +947,185 @@ body {
 }
 .comment-submit-btn:hover { opacity: 0.88; }
 
+/* ── Trainer ── */
+.bmi-card {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+.bmi-platy-col {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bmi-platy-img {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 18px rgba(255,124,74,0.35));
+}
+.bmi-stats-col { flex: 1; display: flex; flex-direction: column; gap: 0.75rem; }
+.bmi-number-row { display: flex; align-items: baseline; gap: 0.5rem; }
+.bmi-number {
+  font-family: 'Nunito', sans-serif;
+  font-size: 3rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ff7c4a, #ff4d8f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1;
+}
+.bmi-number-label { font-size: 1rem; color: var(--muted); font-weight: 600; }
+.bmi-badge {
+  display: inline-block;
+  padding: 0.3rem 0.9rem;
+  border-radius: 100px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.85rem;
+  width: fit-content;
+}
+.bmi-badge-under  { background: rgba(96,165,250,0.18); color: #93c5fd; }
+.bmi-badge-normal { background: rgba(52,211,153,0.18); color: #6ee7b7; }
+.bmi-badge-over   { background: rgba(251,191,36,0.18);  color: #fde68a; }
+.bmi-badge-obese  { background: rgba(255,95,95,0.18);   color: #fca5a5; }
+
+.bmi-meter-wrap { display: flex; flex-direction: column; gap: 0.35rem; }
+.bmi-meter-track {
+  position: relative;
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 100px;
+  overflow: visible;
+}
+.bmi-meter-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, #60a5fa, #6ee7b7, #fde68a, #fca5a5);
+  transition: width 1s cubic-bezier(0.34,1.2,0.64,1);
+  width: 0;
+}
+.bmi-meter-dot {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.25);
+  transform: translate(-50%, -50%);
+  transition: left 1s cubic-bezier(0.34,1.2,0.64,1);
+  left: 0;
+}
+.bmi-meter-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.bmi-meta-row { display: flex; gap: 0.75rem; }
+.bmi-meta-chip {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 100px;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.bmi-incomplete { font-size: 0.85rem; color: var(--muted); }
+
+/* Rings */
+.rings-row-inner {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+.rings-macros {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.rings-empty { color: var(--muted); font-size: 0.9rem; }
+
+.ring-big-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.ring-big-label {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text);
+}
+.ring-big-goal { font-size: 0.78rem; color: var(--muted); }
+
+.ring-center-big {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.ring-big-val {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 1.15rem;
+  color: white;
+  line-height: 1;
+}
+.ring-big-unit { font-size: 0.65rem; color: rgba(255,255,255,0.5); }
+
+.ring-small-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+.ring-small-label {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+.ring-small-goal { font-size: 0.72rem; color: var(--muted); }
+
+/* Targets */
+.targets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.target-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+}
+.target-icon { font-size: 1.5rem; }
+.target-body { display: flex; flex-direction: column; gap: 0.15rem; }
+.target-label { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+.target-value {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.target-unit { font-size: 0.72rem; color: var(--muted); font-weight: 400; }
+
 /* ── Responsive ── */
 @media (max-width: 700px) {
   .log-form { grid-template-columns: 1fr; }
   .macros-row { grid-template-columns: repeat(2, 1fr); }
+  .bmi-card { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .rings-row-inner { flex-direction: column; align-items: flex-start; }
 }

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ascend.AI — Trainer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+
+  <div id="page" style="display:none">
+    <div class="topbar">
+      <div class="topbar-logo">
+        <span class="topbar-platy">
+          <svg width="26" height="26" viewBox="0 0 140 140" fill="none">
+            <ellipse cx="70" cy="86" rx="42" ry="31" fill="#ff7c4a"/>
+            <ellipse cx="70" cy="91" rx="26" ry="19" fill="#ffb89e"/>
+            <ellipse cx="70" cy="54" rx="28" ry="26" fill="#ff7c4a"/>
+            <ellipse cx="95" cy="60" rx="19" ry="9" fill="#ff4d8f"/>
+            <circle cx="80" cy="49" r="7" fill="white"/>
+            <circle cx="80" cy="49" r="4" fill="#1a0a0a"/>
+            <circle cx="82" cy="47" r="1.5" fill="white"/>
+            <ellipse cx="54" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(-8 54 116)"/>
+            <ellipse cx="86" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(8 86 116)"/>
+          </svg>
+        </span>
+        Ascend.AI
+      </div>
+      <nav class="topbar-nav">
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/meals.html" class="nav-link">Meals</a>
+        <a href="/feed.html" class="nav-link">Feed</a>
+        <a href="/trainer.html" class="nav-link active">Trainer</a>
+      </nav>
+      <div class="user-info">
+        <div class="avatar-placeholder" id="avatar-initial">?</div>
+        <span class="user-name" id="user-name-display"></span>
+        <button class="logout-btn" onclick="logout()">Sign out</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">🏋️ Personal Trainer</h1>
+          <p class="page-subtitle">Your body stats and daily nutrition targets</p>
+        </div>
+      </div>
+
+      <!-- BMI Card -->
+      <div class="card bmi-card" id="bmi-card">
+        <div class="bmi-platy-col">
+          <img id="bmi-platypus" class="bmi-platy-img" src="./platy-normal.png" alt="platypus" />
+        </div>
+        <div class="bmi-stats-col">
+          <div class="bmi-number-row">
+            <span class="bmi-number" id="bmi-value">--</span>
+            <span class="bmi-number-label">BMI</span>
+          </div>
+          <div class="bmi-badge" id="bmi-badge">--</div>
+          <div class="bmi-meter-wrap">
+            <div class="bmi-meter-track">
+              <div class="bmi-meter-fill" id="bmi-meter-fill"></div>
+              <div class="bmi-meter-dot" id="bmi-meter-dot"></div>
+            </div>
+            <div class="bmi-meter-labels">
+              <span>Underweight</span>
+              <span>Normal</span>
+              <span>Overweight</span>
+            </div>
+          </div>
+          <div class="bmi-meta-row">
+            <span class="bmi-meta-chip">⚖️ <span id="bmi-weight-val">--</span></span>
+            <span class="bmi-meta-chip">📏 <span id="bmi-height-val">--</span></span>
+          </div>
+          <p class="bmi-incomplete" id="bmi-incomplete" style="display:none">
+            Complete your profile (height + weight) to see your BMI.
+          </p>
+        </div>
+      </div>
+
+      <!-- Nutrition Rings -->
+      <div class="card">
+        <div class="section-title">🍽️ Today's Nutrition</div>
+        <div class="rings-row" id="rings-container">
+          <div class="rings-loading">Loading nutrition data...</div>
+        </div>
+      </div>
+
+      <!-- Daily Targets -->
+      <div class="card" id="targets-card">
+        <div class="section-title">🎯 Your Daily Targets</div>
+        <div class="targets-grid" id="targets-grid">
+          <div class="rings-loading">Loading targets...</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="./trainer.js"></script>
+</body>
+</html>
