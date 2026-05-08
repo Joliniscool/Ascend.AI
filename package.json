@@ -4,12 +4,17 @@
   "scripts": {
     "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
     "build": "cd server && npm install && cd ../client && npm install && npm run build && cp *.js *.css ../server/public/ && find . -maxdepth 1 -name '*.html' ! -name 'index.html' -exec cp {} ../server/public/ \\; && find . -maxdepth 1 \\( -name '*.png' -o -name '*.PNG' \\) -exec cp {} ../server/public/ \\;",
-    "start": "node server/app.js"
+    "start": "node server/app.js",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
     "concurrently": "*"
+  },
+  "devDependencies": {
+    "wrangler": "^4.90.0"
   }
 }
