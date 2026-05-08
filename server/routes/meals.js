@@ -404,6 +404,28 @@ router.post('/:id/rate', isAuthenticated, async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/meals/:id/ratings
+// ─────────────────────────────────────────────────────────────────────────────
+// Returns the full per-user rating list for one public meal so the client
+// can render a "who rated this?" modal. Populates user.name + avatar so we
+// don't need a separate fetch per row.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/:id/ratings', isAuthenticated, async (req, res) => {
+  try {
+    const meal = await Meal.findOne({ _id: req.params.id, isPublic: true }).select('_id').lean();
+    if (!meal) return res.status(404).json({ error: 'meal not found' });
+    const ratings = await Rating.find({ meal: meal._id })
+      .populate('user', 'name avatar')
+      .sort({ updatedAt: -1 })
+      .lean();
+    res.json({ ratings });
+  } catch (err) {
+    console.error('Ratings list error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.delete('/:id/rate', isAuthenticated, async (req, res) => {
   try {
     await Rating.deleteOne({ meal: req.params.id, user: req.user._id });

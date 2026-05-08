@@ -394,17 +394,26 @@ function ascensionBarHtml(meal) {
     <ellipse cx="86" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(8 86 116)"/>
   </svg>`;
 
+  // The rating-count chip is clickable when ratings > 0 — opens a modal
+  // listing every user who rated, their score, and when. Suppressed entirely
+  // when zero ratings exist (nothing to show).
+  const ratingCountChip = ratingCount > 0
+    ? `<button class="ascension-rating-count" onclick="openRatingsList('${meal._id}')" title="See who rated">
+         ${ratingCount} rating${ratingCount !== 1 ? 's' : ''}
+       </button>`
+    : '';
+
   // Meta string: tier labels only — never raw numbers. Color-codes each tier.
   const metaText = ratingCount > 0 && myRating != null
     ? `You think: <strong style="color:${yourTier.color}">${yourTier.label}</strong>
        <span class="ascension-sep">·</span>
        Community: <strong style="color:${communityTier.color}">${communityTier.label}</strong>
        <span class="ascension-sep">·</span>
-       ${ratingCount} rating${ratingCount !== 1 ? 's' : ''}`
+       ${ratingCountChip}`
     : ratingCount > 0
     ? `Community: <strong style="color:${communityTier.color}">${communityTier.label}</strong>
        <span class="ascension-sep">·</span>
-       ${ratingCount} rating${ratingCount !== 1 ? 's' : ''}`
+       ${ratingCountChip}`
     : myRating != null
     ? `You think: <strong style="color:${yourTier.color}">${yourTier.label}</strong>`
     : `Starting tier: <strong style="color:${yourTier.color}">${yourTier.label}</strong>`;
@@ -563,6 +572,84 @@ function showToast(msg) {
 async function logout() {
   await fetch(`${API}/auth/logout`, { credentials: 'include' });
   window.location.href = '/';
+}
+
+// ── Ratings-list modal ────────────────────────────────────────────────────
+// Clicking "X ratings" in any feed card opens a modal listing every rater +
+// their score (as a tier label) + a "X ago" timestamp. Modal HTML injected
+// once on script load — same IIFE pattern as meal-details.js.
+
+(function injectRatingsListModal() {
+  if (document.getElementById('ratings-list-modal')) return;
+  const html = `
+    <div id="ratings-list-modal" class="ratings-list-modal" style="display:none">
+      <div class="ratings-list-backdrop" onclick="closeRatingsList()"></div>
+      <div class="ratings-list-content">
+        <button class="ratings-list-close" onclick="closeRatingsList()" title="Close">✕</button>
+        <h3 class="ratings-list-title" id="ratings-list-title">Ratings</h3>
+        <div class="ratings-list-items" id="ratings-list-items">
+          <div class="ratings-list-loading">Loading…</div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' &&
+        document.getElementById('ratings-list-modal').style.display === 'flex') {
+      closeRatingsList();
+    }
+  });
+})();
+
+async function openRatingsList(mealId) {
+  const modal = document.getElementById('ratings-list-modal');
+  const items = document.getElementById('ratings-list-items');
+  const title = document.getElementById('ratings-list-title');
+
+  // Set the title from cached meal so the user sees context immediately.
+  const meal = _mealsCache?.find(m => String(m._id) === String(mealId));
+  title.textContent = meal?.name ? `Ratings · ${meal.name}` : 'Ratings';
+
+  items.innerHTML = '<div class="ratings-list-loading">Loading…</div>';
+  modal.style.display = 'flex';
+
+  try {
+    const res = await fetch(`${API}/api/meals/${mealId}/ratings`, { credentials: 'include' });
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    const { ratings } = await res.json();
+    renderRatingsList(ratings || []);
+  } catch (err) {
+    items.innerHTML = `<div class="ratings-list-loading">Couldn't load ratings: ${escHtml(err.message)}</div>`;
+  }
+}
+
+function renderRatingsList(ratings) {
+  const items = document.getElementById('ratings-list-items');
+  if (!ratings.length) {
+    items.innerHTML = '<div class="ratings-list-loading">No ratings yet.</div>';
+    return;
+  }
+  items.innerHTML = ratings.map(r => {
+    const tier = getTier(r.score);
+    const u = r.user || {};
+    return `
+      <div class="ratings-list-row">
+        ${userAvatarHtml(u, 32)}
+        <div class="ratings-list-meta">
+          <div class="ratings-list-name">${escHtml(u.name || 'Unknown')}</div>
+          <div class="ratings-list-time">${timeAgo(r.updatedAt || r.createdAt)}</div>
+        </div>
+        <div class="ratings-list-tier" style="background:${tier.color}22; color:${tier.color}; border-color:${tier.color}55">
+          ${tier.label}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function closeRatingsList() {
+  document.getElementById('ratings-list-modal').style.display = 'none';
 }
 
 init();
