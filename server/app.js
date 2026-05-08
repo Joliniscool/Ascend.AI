@@ -52,7 +52,7 @@ app.use('/api/peptides', require('./routes/peptides'));
 if (isProduction) {
   const clientPath = path.join(__dirname, 'public');
   app.use(express.static(clientPath));
-  app.get('*', (req, res) => res.sendFile(path.join(clientPath, 'index.html')));
+  app.get('/{*path}', (req, res) => res.sendFile(path.join(clientPath, 'index.html')));
 }
 
 const PORT = process.env.PORT || 8080;
