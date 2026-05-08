@@ -42,44 +42,55 @@ function renderTrainerMicros(stats) {
   if (label) label.style.display = 'block';
 }
 
+// BMI tier config — ordered from most ascended to most chud
+const BMI_TIERS = [
+  { max: 20,   img: './king plat.PNG',         tier: '👑 King Plat',         badge: 'Ascended',     cls: 'bmi-badge-king'  },
+  { max: 22.5, img: './prince plat.PNG',        tier: '✨ Prince Plat',        badge: 'Looksmaxxing', cls: 'bmi-badge-prince'},
+  { max: 25,   img: null,                       tier: '😐 Normal Plat',        badge: 'Normal',       cls: 'bmi-badge-normal'},
+  { max: 28,   img: './chud plat.PNG',          tier: '😤 Chud Plat',          badge: 'Chudding',     cls: 'bmi-badge-over'  },
+  { max: Infinity, img: './extreme chud plat.PNG', tier: '🐷 Extreme Chud Plat', badge: 'Extreme Chud', cls: 'bmi-badge-obese' },
+];
+
 function renderBMI(stats, profile) {
   const weight = stats.currentWeight;
   const height = profile.height;
 
   if (!weight || !height) {
     document.getElementById('bmi-incomplete').style.display = 'block';
-    document.getElementById('bmi-platypus').src = './platy-normal.png';
+    // Default to normal SVG when profile incomplete
+    document.getElementById('bmi-platypus').style.display     = 'none';
+    document.getElementById('bmi-platypus-svg').style.display = 'block';
     return;
   }
 
-  const h = height / 100;
-  const bmi = weight / (h * h);
+  const h          = height / 100;
+  const bmi        = weight / (h * h);
   const bmiRounded = Math.round(bmi * 10) / 10;
 
-  // Set platypus image
-  let img;
-  if (bmi > 25)      img = './platy-superfat.png';
-  else if (bmi >= 23) img = './platy-fat.png';
-  else if (bmi >= 22) img = './platy-normal.png';
-  else if (bmi >= 21) img = './platy-ascending.png';
-  else                img = './platy-chad.png';
+  // Pick tier
+  const tier = BMI_TIERS.find(t => bmi < t.max);
+  const imgEl = document.getElementById('bmi-platypus');
+  const svgEl = document.getElementById('bmi-platypus-svg');
 
-  document.getElementById('bmi-platypus').src = img;
-  document.getElementById('bmi-value').textContent = bmiRounded;
-  document.getElementById('bmi-weight-val').textContent = `${weight} kg`;
-  document.getElementById('bmi-height-val').textContent = `${height} cm`;
+  if (tier.img) {
+    imgEl.src            = tier.img;
+    imgEl.style.display  = 'block';
+    svgEl.style.display  = 'none';
+  } else {
+    imgEl.style.display  = 'none';
+    svgEl.style.display  = 'block';
+  }
 
-  // Badge
+  document.getElementById('bmi-tier-label').textContent  = tier.tier;
+  document.getElementById('bmi-value').textContent        = bmiRounded;
+  document.getElementById('bmi-weight-val').textContent   = `${weight} kg`;
+  document.getElementById('bmi-height-val').textContent   = `${height} cm`;
+
   const badge = document.getElementById('bmi-badge');
-  let label, badgeClass;
-  if (bmi < 18.5)      { label = 'Underweight'; badgeClass = 'bmi-badge-under'; }
-  else if (bmi < 25)   { label = 'Normal';       badgeClass = 'bmi-badge-normal'; }
-  else if (bmi < 30)   { label = 'Overweight';   badgeClass = 'bmi-badge-over'; }
-  else                 { label = 'Obese';         badgeClass = 'bmi-badge-obese'; }
-  badge.textContent = label;
-  badge.className = `bmi-badge ${badgeClass}`;
+  badge.textContent = tier.badge;
+  badge.className   = `bmi-badge ${tier.cls}`;
 
-  // Meter: map BMI 15-35 → 0-100%
+  // Meter: map BMI 15–35 → 0–100%
   const pct = Math.min(100, Math.max(0, ((bmi - 15) / 20) * 100));
   document.getElementById('bmi-meter-fill').style.width = `${pct}%`;
   document.getElementById('bmi-meter-dot').style.left   = `${pct}%`;

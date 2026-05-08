@@ -1075,10 +1075,22 @@ body {
   font-size: 0.85rem;
   width: fit-content;
 }
-.bmi-badge-under  { background: rgba(96,165,250,0.18); color: #93c5fd; }
-.bmi-badge-normal { background: rgba(52,211,153,0.18); color: #6ee7b7; }
+.bmi-badge-king   { background: rgba(250,204,21,0.2);   color: #fde047; }
+.bmi-badge-prince { background: rgba(167,139,250,0.2);  color: #c4b5fd; }
+.bmi-badge-under  { background: rgba(96,165,250,0.18);  color: #93c5fd; }
+.bmi-badge-normal { background: rgba(52,211,153,0.18);  color: #6ee7b7; }
 .bmi-badge-over   { background: rgba(251,191,36,0.18);  color: #fde68a; }
 .bmi-badge-obese  { background: rgba(255,95,95,0.18);   color: #fca5a5; }
+
+.bmi-tier-label {
+  margin-top: 0.5rem;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
 
 .bmi-meter-wrap { display: flex; flex-direction: column; gap: 0.35rem; }
 .bmi-meter-track {
