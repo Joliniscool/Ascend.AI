@@ -1,43 +1,49 @@
-// ── Chasing Platypus ──
+// ── Chasing Platypus (Desktop Goose style) ──
 (function () {
-  const SIZE     = 72;
-  const FLEE_R   = 200;   // pixels — starts fleeing when cursor within this
-  const TEASE_R  = 120;   // gets this close before darting away (tease mode)
-  const MAX_FLEE = 10;
-  const MAX_WAND = 2.8;
+  const SIZE       = 72;
+  const WAND_SPEED = 1.8;
+  const CHASE_SPEED = 7.5;
 
   let platy, bubble, raf;
-  let px, py, vx = 2, vy = 1.5;
-  let mx = -9999, my = -9999;
+  let px, py, vx = 1.5, vy = 1;
+  let mx = window.innerWidth / 2, my = window.innerHeight / 2;
   let userName = 'chud';
-  let state = 'wander';     // wander | flee | tease
-  let teaseTimer = 0;       // how long we've been teasing
+  let state = 'wander'; // wander | chase | idle
+  let chaseTimer  = 0;
+  let chaseMaxTime = 0;
+  let idleTimer    = 0;
+  let idleMaxTime  = 0;
   let bubbleTO;
   let active = false;
 
   const TAUNTS = [
-    "lmaooo too slow {name}, hit cardio more",
-    "ngmi {name}, can't even click a platypus",
-    "your cursor speed reflects your protein intake {name}",
-    "framemogged by a duck-billed mammal, {name}. embarrassing.",
-    "jestermaxxing won't help you catch me {name}",
-    "imagine being outrun by something that lays eggs, {name}",
-    "that's literally all the mewing you've been doing? {name}?",
-    "you're larping as someone fast enough to catch me, {name}",
-    "chud behavior {name}. get your macros up then try again",
-    "big back reflexes, {name}. couldn't catch a cold",
-    "zero clavicular width AND can't click? ngmi {name}",
-    "ascension requires faster clicks than that {name}",
-    "blackpill cope won't help you catch me {name}",
-    "i've been mogging you this whole time and you didn't even notice, {name}",
+    "got you, {name}. too slow.",
+    "lmaooo nowhere to run {name}",
+    "caught you chudding, {name}",
+    "your cursor speed reflects your macros, {name}",
+    "framemogged by a platypus, {name}. embarrassing.",
+    "i found you {name}. log your meals.",
+    "ngmi {name}. i literally walked to you.",
+    "you call that evading? big back reflexes, {name}.",
+    "ascension starts with faster reflexes, {name}",
+    "{name} you can't even outrun a duck-billed mammal",
+    "caught lackin as usual, {name}",
+    "mewing won't help you escape me, {name}",
   ];
 
-  function taunt() {
-    return TAUNTS[Math.floor(Math.random() * TAUNTS.length)]
-      .replace(/{name}/g, userName);
-  }
+  const CHASE_TAUNTS = [
+    "GET BACK HERE {name}",
+    "COME HERE {name}",
+    "YOU CANNOT ESCAPE {name}",
+    "STAY STILL {name}",
+    "I SEE YOU {name}",
+    "CHUD {name} STOP RUNNING",
+  ];
 
-  // ── Inject CSS ──
+  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function fmt(str)  { return str.replace(/{name}/g, userName); }
+
+  // ── CSS ──
   function injectStyles() {
     if (document.getElementById('platy-chase-css')) return;
     const s = document.createElement('style');
@@ -48,15 +54,13 @@
         z-index: 9998;
         width: ${SIZE}px;
         height: ${SIZE}px;
-        cursor: pointer;
+        cursor: default;
         user-select: none;
         pointer-events: all;
         transform-origin: center bottom;
         will-change: transform, left, top;
-        filter: drop-shadow(0 4px 12px rgba(255,124,74,0.4));
-        transition: filter 0.15s;
+        filter: drop-shadow(0 3px 8px rgba(255,124,74,0.35));
       }
-      #chase-platy:hover { filter: drop-shadow(0 4px 20px rgba(255,77,143,0.8)); }
       #chase-platy svg { width: 100%; height: 100%; display: block; }
 
       #chase-bubble {
@@ -69,7 +73,7 @@
         font-family: 'DM Sans', sans-serif;
         font-size: 0.78rem;
         color: #f5eeee;
-        max-width: 210px;
+        max-width: 215px;
         line-height: 1.45;
         pointer-events: none;
         box-shadow: 0 6px 24px rgba(0,0,0,0.55);
@@ -88,10 +92,10 @@
       }
       #chase-bubble.visible {
         display: block;
-        animation: bubbleIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both;
+        animation: platBubbleIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both;
       }
-      @keyframes bubbleIn {
-        from { opacity:0; transform: scale(0.7) translateY(6px); }
+      @keyframes platBubbleIn {
+        from { opacity:0; transform: scale(0.75) translateY(6px); }
         to   { opacity:1; transform: scale(1) translateY(0); }
       }
     `;
@@ -119,7 +123,6 @@
   </svg>`;
 
   function createElements() {
-    // Remove any existing instances
     document.getElementById('chase-platy')?.remove();
     document.getElementById('chase-bubble')?.remove();
 
@@ -133,179 +136,162 @@
     document.body.appendChild(platy);
     document.body.appendChild(bubble);
 
-    // Random starting position away from edges
     px = 120 + Math.random() * (window.innerWidth  - 240);
     py = 120 + Math.random() * (window.innerHeight - 240);
-
     platy.style.left = px + 'px';
     platy.style.top  = py + 'px';
-
-    platy.addEventListener('click',      onCatch);
-    platy.addEventListener('touchstart', onCatch, { passive: true });
   }
 
-  // ── Physics tick ──
+  // ── Show bubble ──
+  function showBubble(text, duration) {
+    bubble.classList.remove('visible');
+    void bubble.offsetWidth;
+    bubble.textContent = text;
+    bubble.classList.add('visible');
+    positionBubble();
+    clearTimeout(bubbleTO);
+    bubbleTO = setTimeout(() => bubble.classList.remove('visible'), duration || 3500);
+  }
+
+  function positionBubble() {
+    const bw = 215;
+    let bx = px + SIZE / 2 - bw / 2;
+    bx = Math.max(8, Math.min(bx, window.innerWidth - bw - 8));
+    bubble.style.left = bx + 'px';
+    bubble.style.top  = (py - 68) + 'px';
+  }
+
+  // ── State scheduler ──
+  function scheduleNextState() {
+    if (!active) return;
+    if (state === 'wander') {
+      // Random chance to go idle or start chasing
+      const r = Math.random();
+      if (r < 0.35) {
+        // Go idle for a bit (stop and look around)
+        state = 'idle';
+        idleMaxTime = 60 + Math.random() * 90; // ~1-2.5s at 60fps
+        idleTimer = 0;
+      } else {
+        // Chase the cursor!
+        state = 'chase';
+        chaseMaxTime = 180 + Math.random() * 240; // 3-7s at 60fps
+        chaseTimer = 0;
+        showBubble(fmt(pick(CHASE_TAUNTS)), 2500);
+      }
+    }
+    // Next state decision in 8-20 seconds
+    setTimeout(scheduleNextState, 8000 + Math.random() * 12000);
+  }
+
+  // ── Main loop ──
   let lastTime = 0;
   function tick(ts) {
     if (!active) return;
-    const dt = Math.min((ts - lastTime) / 16.67, 3); // capped delta, normalised to 60fps
+    const dt = Math.min((ts - lastTime) / 16.67, 3);
     lastTime = ts;
 
     const W = window.innerWidth;
     const H = window.innerHeight;
+    const cx = px + SIZE / 2;
+    const cy = py + SIZE / 2;
 
-    const dx   = mx - (px + SIZE / 2);
-    const dy   = my - (py + SIZE / 2);
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (state === 'chase') {
+      chaseTimer += dt;
+      const dx   = mx - cx;
+      const dy   = my - cy;
+      const dist = Math.sqrt(dx * dx + dy * dy);
 
-    // ── State machine ──
-    if (state === 'wander') {
-      if (dist < TEASE_R) {
-        // Cursor is very close — switch to tease: drift toward cursor then dash away
-        state = 'tease';
-        teaseTimer = 0;
-      } else if (dist < FLEE_R) {
-        state = 'flee';
-      }
-    } else if (state === 'flee') {
-      if (dist >= FLEE_R) state = 'wander';
-    } else if (state === 'tease') {
-      teaseTimer += dt;
-      // After ~0.6s of "considering" the cursor, dash hard away
-      if (teaseTimer > 36) {
+      if (dist < 36) {
+        // Caught the cursor!
+        showBubble(fmt(pick(TAUNTS)), 3800);
+        state = 'wander';
+        // Bounce away slightly after catch
+        vx = (Math.random() - 0.5) * 4;
+        vy = (Math.random() - 0.5) * 4;
+      } else if (chaseTimer > chaseMaxTime) {
+        // Gave up
+        state = 'wander';
+      } else {
+        // Accelerate toward cursor
         const angle = Math.atan2(dy, dx);
-        vx = -Math.cos(angle) * MAX_FLEE * 1.6;
-        vy = -Math.sin(angle) * MAX_FLEE * 1.6;
-        state = 'flee';
+        const force = Math.min(dist / 80, 1) * 2.2;
+        vx += Math.cos(angle) * force * dt;
+        vy += Math.sin(angle) * force * dt;
       }
-    }
-
-    // ── Forces ──
-    if (state === 'flee' || state === 'tease') {
-      const angle = Math.atan2(dy, dx);
-      const force = state === 'tease'
-        ? ((FLEE_R - dist) / FLEE_R) * 1.2   // gentle drift while teasing
-        : ((FLEE_R - dist) / FLEE_R) * MAX_FLEE * 0.55;
-      vx -= Math.cos(angle) * force * dt;
-      vy -= Math.sin(angle) * force * dt;
+    } else if (state === 'idle') {
+      idleTimer += dt;
+      // Slow to a stop
+      vx *= Math.pow(0.88, dt);
+      vy *= Math.pow(0.88, dt);
+      if (idleTimer > idleMaxTime) state = 'wander';
     } else {
-      // Wander: small random nudges
-      if (Math.random() < 0.025 * dt) {
-        vx += (Math.random() - 0.5) * 2;
-        vy += (Math.random() - 0.5) * 2;
+      // Wander: small random nudges + gentle steering
+      if (Math.random() < 0.03 * dt) {
+        vx += (Math.random() - 0.5) * 2.2;
+        vy += (Math.random() - 0.5) * 2.2;
       }
     }
 
     // Speed cap
     const spd    = Math.sqrt(vx * vx + vy * vy);
-    const maxSpd = (state === 'flee') ? MAX_FLEE : (state === 'tease' ? 1.5 : MAX_WAND);
+    const maxSpd = state === 'chase' ? CHASE_SPEED : (state === 'idle' ? 0.4 : WAND_SPEED);
     if (spd > maxSpd) { vx = (vx / spd) * maxSpd; vy = (vy / spd) * maxSpd; }
 
-    // Friction + minimum wander speed
-    const friction = state === 'flee' ? 0.96 : 0.97;
+    // Friction
+    const friction = state === 'chase' ? 0.94 : 0.97;
     vx *= Math.pow(friction, dt);
     vy *= Math.pow(friction, dt);
-    if (state === 'wander' && spd < 0.8) {
-      vx += (Math.random() - 0.5) * 0.8;
-      vy += (Math.random() - 0.5) * 0.8;
+
+    // Keep wandering if too slow
+    if (state === 'wander' && spd < 0.6) {
+      vx += (Math.random() - 0.5) * 1.0;
+      vy += (Math.random() - 0.5) * 1.0;
     }
 
-    // Move
     px += vx * dt;
     py += vy * dt;
 
     // Wall bounce
-    if (px < 4)             { px = 4;             vx =  Math.abs(vx) * 0.8; }
-    if (px > W - SIZE - 4)  { px = W - SIZE - 4;  vx = -Math.abs(vx) * 0.8; }
-    if (py < 4)             { py = 4;             vy =  Math.abs(vy) * 0.8; }
-    if (py > H - SIZE - 4)  { py = H - SIZE - 4;  vy = -Math.abs(vy) * 0.8; }
+    if (px < 4)            { px = 4;            vx =  Math.abs(vx) * 0.75; }
+    if (px > W - SIZE - 4) { px = W - SIZE - 4; vx = -Math.abs(vx) * 0.75; }
+    if (py < 4)            { py = 4;            vy =  Math.abs(vy) * 0.75; }
+    if (py > H - SIZE - 4) { py = H - SIZE - 4; vy = -Math.abs(vy) * 0.75; }
 
     platy.style.left = px + 'px';
     platy.style.top  = py + 'px';
 
-    // ── Visual transform ──
-    const flipX  = vx < -0.25 ? -1 : 1;
-    const bobFreq = state === 'flee' ? 18 : 6;
-    const bobAmp  = state === 'flee' ? 5  : 2.5;
-    const bob     = Math.sin(ts / 1000 * bobFreq) * bobAmp;
-    const squishX = state === 'flee' ? (1 + Math.abs(vx) / MAX_FLEE * 0.12) : 1;
-    const squishY = state === 'flee' ? (1 - Math.abs(vx) / MAX_FLEE * 0.08) : 1;
-    platy.style.transform = `scaleX(${flipX * squishX}) scaleY(${squishY}) translateY(${bob}px)`;
+    // ── Visuals ──
+    const flipX   = vx < -0.2 ? -1 : 1;
+    const bobFreq = state === 'chase' ? 20 : (state === 'idle' ? 1.5 : 7);
+    const bobAmp  = state === 'chase' ? 6  : (state === 'idle' ? 1   : 3);
+    const bob     = Math.sin(ts / 1000 * bobFreq) * bobAmp * (spd / (maxSpd || 1));
+    const tilt    = state === 'chase' ? Math.atan2(vy, vx) * 10 * (Math.PI / 180) : 0;
+    platy.style.transform = `scaleX(${flipX}) translateY(${bob}px) rotate(${tilt}rad)`;
 
-    // Move bubble with platypus
-    if (bubble.classList.contains('visible')) {
-      bubble.style.left = (px + SIZE / 2 - parseInt(bubble.style.width || 200) / 2) + 'px';
-      bubble.style.top  = (py - 72) + 'px';
-    }
+    if (bubble.classList.contains('visible')) positionBubble();
 
     raf = requestAnimationFrame(tick);
   }
 
-  // ── Periodic jump/dash across screen ──
-  function scheduleJump() {
-    const delay = 10000 + Math.random() * 14000;
-    setTimeout(() => {
-      if (!active) return;
-      // Taunt shake then teleport-dash
-      let shakes = 0;
-      const shake = setInterval(() => {
-        const r = (shakes % 2 === 0 ? 1 : -1) * 18;
-        platy.style.transform = `rotate(${r}deg) scale(1.15)`;
-        shakes++;
-        if (shakes > 5) {
-          clearInterval(shake);
-          // Dash to opposite area of screen
-          const W = window.innerWidth, H = window.innerHeight;
-          px = 80 + Math.random() * (W - 160);
-          py = 80 + Math.random() * (H - 160);
-          vx = (Math.random() - 0.5) * MAX_FLEE * 1.4;
-          vy = (Math.random() - 0.5) * MAX_FLEE * 1.4;
-          state = 'flee';
-          setTimeout(() => { state = 'wander'; }, 1200);
-        }
-      }, 80);
-      scheduleJump();
-    }, delay);
-  }
-
-  // ── Click / catch handler ──
-  function onCatch(e) {
-    if (e.cancelable) e.preventDefault();
-    e.stopPropagation();
-
-    bubble.classList.remove('visible');
-    void bubble.offsetWidth; // reflow to re-trigger animation
-    bubble.textContent = taunt();
-    bubble.classList.add('visible');
-    bubble.style.left = (px + SIZE / 2 - 105) + 'px';
-    bubble.style.top  = (py - 72)  + 'px';
-
-    // Panic-dash away
-    vx = (Math.random() - 0.5) * MAX_FLEE * 2.2;
-    vy = -Math.abs(Math.random() * MAX_FLEE * 1.8); // always upward first
-    state = 'flee';
-
-    clearTimeout(bubbleTO);
-    bubbleTO = setTimeout(() => bubble.classList.remove('visible'), 3800);
-  }
-
-  // ── Mouse / touch tracking ──
+  // ── Input ──
   function onMouseMove(e) { mx = e.clientX; my = e.clientY; }
   function onTouchMove(e) { mx = e.touches[0].clientX; my = e.touches[0].clientY; }
 
-  // ── Public API ──
+  // ── Public ──
   window.initChasePlatypus = function (name) {
     userName = (name || 'chud').split(' ')[0];
     if (active) destroyChasePlatypus();
     injectStyles();
     createElements();
-    active = true;
-    state  = 'wander';
+    active   = true;
+    state    = 'wander';
     lastTime = performance.now();
-    document.addEventListener('mousemove',  onMouseMove);
-    document.addEventListener('touchmove',  onTouchMove, { passive: true });
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('touchmove', onTouchMove, { passive: true });
     raf = requestAnimationFrame(tick);
-    scheduleJump();
+    // First state decision after 6-14 seconds of chill wandering
+    setTimeout(scheduleNextState, 6000 + Math.random() * 8000);
   };
 
   window.destroyChasePlatypus = function () {
