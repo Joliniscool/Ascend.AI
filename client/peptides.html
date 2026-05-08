@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ascend.AI — Feed</title>
+  <title>Ascend.AI — Peptides</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./styles.css" />
-  <link rel="stylesheet" href="./meal-details.css" />
 </head>
 <body>
 
@@ -36,16 +35,16 @@
       <nav class="topbar-nav">
         <a href="/" class="nav-link">Dashboard</a>
         <a href="/meals.html" class="nav-link">Meals</a>
-        <a href="/feed.html" class="nav-link active">Feed</a>
+        <a href="/feed.html" class="nav-link">Feed</a>
         <a href="/trainer.html" class="nav-link">Trainer</a>
         <a href="/psl.html" class="nav-link">PSL</a>
         <a href="/news.html" class="nav-link">News</a>
-        <a href="/peptides.html" class="nav-link">Peptides</a>
+        <a href="/peptides.html" class="nav-link active">Peptides</a>
       </nav>
       <div class="user-info" id="user-info-wrap" style="position:relative">
         <button class="user-trigger" onclick="toggleProfileDropdown()">
           <div class="avatar-placeholder" id="avatar-initial">?</div>
-          <span class="user-name" id="user-name-display">Loading...</span>
+          <span class="user-name" id="user-name-display"></span>
           <span class="dropdown-chevron" id="profile-chevron">▾</span>
         </button>
         <button class="logout-btn" onclick="logout()">Sign out</button>
@@ -58,75 +57,38 @@
             <button class="dropdown-close" onclick="toggleProfileDropdown()">✕</button>
           </div>
           <div class="profile-dropdown-grid">
-            <div class="field">
-              <label>Age</label>
-              <input type="number" id="field-age" placeholder="e.g. 20" min="1" max="120" />
-            </div>
-            <div class="field">
-              <label>Sex</label>
-              <select id="field-sex">
-                <option value="">Select...</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Height (cm)</label>
-              <input type="number" id="field-height" placeholder="e.g. 170" />
-            </div>
-            <div class="field">
-              <label>Weight (kg)</label>
-              <input type="number" id="field-weight" placeholder="e.g. 70" step="0.1" />
-            </div>
-            <div class="field">
-              <label>Goal Weight (kg)</label>
-              <input type="number" id="field-goal-weight" placeholder="e.g. 65" step="0.1" />
-            </div>
-            <div class="field" style="grid-column:span 2">
-              <label>Activity Level</label>
-              <select id="field-activity">
-                <option value="">Select...</option>
-                <option value="sedentary">Sedentary</option>
-                <option value="light">Lightly Active</option>
-                <option value="moderate">Moderately Active</option>
-                <option value="active">Active</option>
-                <option value="very_active">Very Active</option>
-              </select>
-            </div>
-            <div class="field" style="grid-column:span 2">
-              <label>Goal</label>
-              <select id="field-goal">
-                <option value="">Select...</option>
-                <option value="lose">Lose Weight</option>
-                <option value="maintain">Maintain</option>
-                <option value="gain">Gain Weight</option>
-              </select>
-            </div>
+            <div class="field"><label>Age</label><input type="number" id="field-age" placeholder="e.g. 20" min="1" max="120" /></div>
+            <div class="field"><label>Sex</label><select id="field-sex"><option value="">Select...</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+            <div class="field"><label>Height (cm)</label><input type="number" id="field-height" placeholder="e.g. 170" /></div>
+            <div class="field"><label>Weight (kg)</label><input type="number" id="field-weight" placeholder="e.g. 70" step="0.1" /></div>
+            <div class="field" style="grid-column:span 2"><label>Activity Level</label><select id="field-activity"><option value="">Select...</option><option value="sedentary">Sedentary</option><option value="light">Lightly Active</option><option value="moderate">Moderately Active</option><option value="active">Active</option><option value="very_active">Very Active</option></select></div>
+            <div class="field" style="grid-column:span 2"><label>Goal</label><select id="field-goal"><option value="">Select...</option><option value="lose">Lose Weight</option><option value="maintain">Maintain</option><option value="gain">Gain Weight</option></select></div>
           </div>
           <button class="save-btn" id="profile-save-btn" onclick="saveProfile()" style="width:100%;margin-top:1.25rem">Save Profile 💾</button>
         </div>
       </div>
     </div>
 
-    <div class="main" style="max-width: 640px">
+    <div class="main" style="max-width:960px">
       <div class="page-header">
         <div>
-          <h1 class="page-title">🌍 Community Feed</h1>
-          <p class="page-subtitle">See what PlexTech members are eating</p>
+          <h1 class="page-title">🧬 Peptides</h1>
+          <p class="page-subtitle">Popular research peptides — community info, discussions, and where to find them</p>
         </div>
       </div>
 
-      <div id="feed-list">
-        <div class="meals-empty">Loading feed...</div>
+      <div class="peptide-disclaimer">
+        ⚠️ These are research compounds. Not approved for human use by the FDA. This is not medical advice. Do your own research.
+      </div>
+
+      <div class="peptide-grid" id="peptide-grid">
+        <!-- Rendered by peptides.js -->
       </div>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
-  <script src="./nutrition.js"></script>
-  <script src="./meal-details.js"></script>
   <script src="./profile-dropdown.js"></script>
-  <script src="./feed.js"></script>
+  <script src="./peptides.js"></script>
 </body>
 </html>

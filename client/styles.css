@@ -1440,6 +1440,209 @@ body {
   color: var(--muted);
 }
 
+/* ── Peptides ── */
+.peptide-disclaimer {
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 12px;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.8rem;
+  color: #fbbf24;
+  margin-bottom: 1.5rem;
+}
+.peptide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.25rem;
+}
+.peptide-card {
+  background: var(--surface2);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.peptide-card:hover {
+  border-color: rgba(255,124,74,0.3);
+  transform: translateY(-2px);
+}
+.peptide-card-top {
+  padding: 1.25rem 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+.peptide-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.peptide-emoji {
+  font-size: 1.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.peptide-name {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  color: var(--text);
+  line-height: 1.2;
+}
+.peptide-aliases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+.peptide-aliases span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+  background: rgba(255,255,255,0.06);
+  border-radius: 100px;
+  padding: 0.1rem 0.5rem;
+}
+.peptide-category {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 100px;
+  padding: 0.2rem 0.65rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.peptide-description {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.peptide-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.peptide-effect-chip {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(255,124,74,0.1);
+  border: 1px solid rgba(255,124,74,0.2);
+  border-radius: 100px;
+  padding: 0.18rem 0.6rem;
+}
+.peptide-dosing {
+  font-size: 0.78rem;
+  color: var(--muted);
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+.peptide-card-actions {
+  padding: 1rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 0.75rem;
+}
+.peptide-vendors {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.peptide-vendor-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 100px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+.peptide-vendor-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.vendor-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+}
+.vendor-secondary {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text);
+}
+.peptide-reddit-btn {
+  background: rgba(255,69,0,0.12);
+  border: 1px solid rgba(255,69,0,0.25);
+  color: #ff6b35;
+  border-radius: 100px;
+  padding: 0.4rem 1rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+.peptide-reddit-btn:hover { background: rgba(255,69,0,0.2); }
+.peptide-discussions {
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.15);
+}
+.peptide-disc-loading {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+}
+.peptide-disc-list {
+  display: flex;
+  flex-direction: column;
+}
+.peptide-disc-item {
+  display: block;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.peptide-disc-item:last-child { border-bottom: none; }
+.peptide-disc-item:hover { background: rgba(255,255,255,0.04); }
+.peptide-disc-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 0.25rem;
+}
+.peptide-disc-preview {
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 0.35rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.peptide-disc-meta {
+  display: flex;
+  gap: 0.65rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.peptide-disc-error {
+  padding: 1rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
 /* ── Looksmaxxing News ── */
 .news-sub-row {
   display: flex;
