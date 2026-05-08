@@ -1301,6 +1301,7 @@ body {
   object-fit: contain;
   filter: drop-shadow(0 4px 20px rgba(255,124,74,0.4));
 }
+#psl-platy-img { width: 240px; height: 240px; }
 .psl-bubble {
   background: var(--surface);
   border: 1.5px solid rgba(255,77,143,0.4);
