@@ -1355,6 +1355,41 @@ body {
 .psl-tier-over   { background: rgba(251,191,36,0.18); color: #fde68a; }
 .psl-tier-obese  { background: rgba(255,95,95,0.18);  color: #fca5a5; }
 
+.psl-verdict-stamp {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 900;
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent2);
+  text-shadow: 0 0 18px rgba(255,77,143,0.6);
+  line-height: 1.2;
+  word-break: break-word;
+}
+.psl-tier-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: -0.25rem;
+}
+.psl-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+.psl-stat-chip {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 100px;
+  padding: 0.18rem 0.6rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
 .psl-headline {
   font-family: 'Nunito', sans-serif;
   font-weight: 800;
