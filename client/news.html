@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ascend.AI — Looksmaxxing News</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+
+  <div id="page" style="display:none">
+    <div class="topbar">
+      <div class="topbar-logo">
+        <span class="topbar-platy">
+          <svg width="26" height="26" viewBox="0 0 140 140" fill="none">
+            <ellipse cx="70" cy="86" rx="42" ry="31" fill="#ff7c4a"/>
+            <ellipse cx="70" cy="91" rx="26" ry="19" fill="#ffb89e"/>
+            <ellipse cx="70" cy="54" rx="28" ry="26" fill="#ff7c4a"/>
+            <ellipse cx="95" cy="60" rx="19" ry="9" fill="#ff4d8f"/>
+            <circle cx="80" cy="49" r="7" fill="white"/>
+            <circle cx="80" cy="49" r="4" fill="#1a0a0a"/>
+            <circle cx="82" cy="47" r="1.5" fill="white"/>
+            <ellipse cx="54" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(-8 54 116)"/>
+            <ellipse cx="86" cy="116" rx="15" ry="6" fill="#ff4d8f" transform="rotate(8 86 116)"/>
+          </svg>
+        </span>
+        Ascend.AI
+      </div>
+      <nav class="topbar-nav">
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/meals.html" class="nav-link">Meals</a>
+        <a href="/feed.html" class="nav-link">Feed</a>
+        <a href="/trainer.html" class="nav-link">Trainer</a>
+        <a href="/psl.html" class="nav-link">PSL</a>
+        <a href="/news.html" class="nav-link active">News</a>
+      </nav>
+      <div class="user-info" id="user-info-wrap" style="position:relative">
+        <button class="user-trigger" onclick="toggleProfileDropdown()">
+          <div class="avatar-placeholder" id="avatar-initial">?</div>
+          <span class="user-name" id="user-name-display"></span>
+          <span class="dropdown-chevron" id="profile-chevron">▾</span>
+        </button>
+        <button class="logout-btn" onclick="logout()">Sign out</button>
+        <div class="profile-dropdown" id="profile-dropdown">
+          <div class="dropdown-header">
+            <div>
+              <div class="dropdown-title">✨ Your Profile</div>
+              <div class="dropdown-subtitle">Sets your calorie &amp; macro targets</div>
+            </div>
+            <button class="dropdown-close" onclick="toggleProfileDropdown()">✕</button>
+          </div>
+          <div class="profile-dropdown-grid">
+            <div class="field"><label>Age</label><input type="number" id="field-age" placeholder="e.g. 20" min="1" max="120" /></div>
+            <div class="field"><label>Sex</label><select id="field-sex"><option value="">Select...</option><option value="male">Male</option><option value="female">Female</option><option value="other">Other</option></select></div>
+            <div class="field"><label>Height (cm)</label><input type="number" id="field-height" placeholder="e.g. 170" /></div>
+            <div class="field"><label>Weight (kg)</label><input type="number" id="field-weight" placeholder="e.g. 70" step="0.1" /></div>
+            <div class="field" style="grid-column:span 2"><label>Activity Level</label><select id="field-activity"><option value="">Select...</option><option value="sedentary">Sedentary</option><option value="light">Lightly Active</option><option value="moderate">Moderately Active</option><option value="active">Active</option><option value="very_active">Very Active</option></select></div>
+            <div class="field" style="grid-column:span 2"><label>Goal</label><select id="field-goal"><option value="">Select...</option><option value="lose">Lose Weight</option><option value="maintain">Maintain</option><option value="gain">Gain Weight</option></select></div>
+          </div>
+          <button class="save-btn" id="profile-save-btn" onclick="saveProfile()" style="width:100%;margin-top:1.25rem">Save Profile 💾</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main" style="max-width:900px">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">📰 Looksmaxxing News</h1>
+          <p class="page-subtitle">Hot takes from the community — updated live from Reddit</p>
+        </div>
+        <button class="outline-btn" onclick="loadNews()" style="margin-top:0">↺ Refresh</button>
+      </div>
+
+      <!-- Subreddit tabs -->
+      <div class="news-sub-row" id="sub-tabs">
+        <button class="news-sub-btn active" data-sub="Looksmaxxing" onclick="setSub(this)">r/Looksmaxxing</button>
+        <button class="news-sub-btn" data-sub="mewing" onclick="setSub(this)">r/mewing</button>
+        <button class="news-sub-btn" data-sub="phenotypes" onclick="setSub(this)">r/phenotypes</button>
+      </div>
+
+      <!-- Topic chips -->
+      <div class="news-topic-row" id="topic-tabs">
+        <button class="news-topic-btn active" data-topic="hot" onclick="setTopic(this)">🔥 Hot</button>
+        <button class="news-topic-btn" data-topic="clavicular" onclick="setTopic(this)">🦴 Clavicular</button>
+        <button class="news-topic-btn" data-topic="androgenic" onclick="setTopic(this)">💪 Androgenic</button>
+        <button class="news-topic-btn" data-topic="king-cookie" onclick="setTopic(this)">👑 King Cookie</button>
+        <button class="news-topic-btn" data-topic="hullo" onclick="setTopic(this)">🎙️ Hullo</button>
+        <button class="news-topic-btn" data-topic="mewing" onclick="setTopic(this)">🦷 Mewing</button>
+        <button class="news-topic-btn" data-topic="bonemaxx" onclick="setTopic(this)">💀 Bonemaxx</button>
+      </div>
+
+      <!-- Feed -->
+      <div id="news-grid" class="news-grid">
+        <div class="news-loading">
+          <div class="spinner"></div>
+          <p>Loading the blackpill feed…</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script src="./profile-dropdown.js"></script>
+  <script src="./news.js"></script>
+</body>
+</html>

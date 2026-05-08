@@ -45,6 +45,7 @@ app.use('/api/judge', require('./routes/judge'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/foods', require('./routes/foods'));
 app.use('/api/psl',   require('./routes/psl'));
+app.use('/api/news',  require('./routes/news'));
 
 
 if (isProduction) {
