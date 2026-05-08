@@ -1,7 +1,7 @@
 const API = '';
 
 let currentTopic = 'hot';
-let currentSub   = 'Looksmaxxing';
+let currentSub   = 'all';
 
 async function init() {
   try {
