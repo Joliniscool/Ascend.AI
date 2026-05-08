@@ -1,7 +1,6 @@
 const API = '';
 
 let currentTopic = 'hot';
-let currentSub   = 'all';
 
 async function init() {
   try {
@@ -23,19 +22,12 @@ function setTopic(btn) {
   loadNews();
 }
 
-function setSub(btn) {
-  document.querySelectorAll('.news-sub-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  currentSub = btn.dataset.sub;
-  loadNews();
-}
-
 async function loadNews() {
   const grid = document.getElementById('news-grid');
   grid.innerHTML = `<div class="news-loading"><div class="spinner"></div><p>Loading the blackpill feed…</p></div>`;
 
   try {
-    const res  = await fetch(`${API}/api/news?topic=${currentTopic}&sub=${currentSub}`, { credentials: 'include' });
+    const res  = await fetch(`${API}/api/news?topic=${currentTopic}`, { credentials: 'include' });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     renderPosts(data.posts || []);

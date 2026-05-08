@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const isAuthenticated = require('../middleware/isAuthenticated');
 
-// All topics use Reddit-wide search (r/Looksmaxxing is banned)
 const TOPIC_QUERIES = {
   hot:           'looksmaxxing',
   clavicular:    'clavicular looksmaxxing',
@@ -12,18 +11,10 @@ const TOPIC_QUERIES = {
   bonemaxx:      'bonemaxxing',
 };
 
-// Working subreddits to restrict search to (optional filter)
-const VALID_SUBS = ['mewing', 'phenotypes', 'Vindicta', 'GlowUps', 'all'];
-
 router.get('/', isAuthenticated, async (req, res) => {
   const topic = TOPIC_QUERIES.hasOwnProperty(req.query.topic) ? req.query.topic : 'hot';
-  const sub   = VALID_SUBS.includes(req.query.sub) ? req.query.sub : 'all';
   const query = TOPIC_QUERIES[topic];
-
-  // Site-wide search, optionally restricted to a subreddit
-  const restrict = sub !== 'all' ? `&restrict_sr=1` : '';
-  const base     = sub !== 'all' ? `https://www.reddit.com/r/${sub}/search.json` : `https://www.reddit.com/search.json`;
-  const url      = `${base}?q=${encodeURIComponent(query)}&sort=hot&limit=25&t=month${restrict}`;
+  const url   = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=hot&limit=25&t=month`;
 
   try {
     const resp = await fetch(url, {
