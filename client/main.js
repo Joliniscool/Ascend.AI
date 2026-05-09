@@ -1,4 +1,4 @@
-const API = '';
+const API = 'https://plexascend.com';
 
 async function init() {
   try {
